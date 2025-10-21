@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#f0f0f0">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/action_bold"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_bold" />
+
+        <ImageButton
+            android:id="@+id/action_italic"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_italic" />
+
+        <ImageButton
+            android:id="@+id/action_underline"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_underline" />
+
+        <ImageButton
+            android:id="@+id/action_strikethrough"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_strikethrough" />
+            
+        <ImageButton
+            android:id="@+id/action_bullet"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_list_bulleted" />
+
+        <ImageButton
+            android:id="@+id/action_checkbox"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_checklist" />
+
+        <ImageButton
+            android:id="@+id/action_txt_color"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_color_text" />
+
+        <ImageButton
+            android:id="@+id/action_bg_color"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_color_fill" />
+
+        <ImageButton
+            android:id="@+id/action_font_size"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_format_size" />
+
+    </LinearLayout>
+</HorizontalScrollView>

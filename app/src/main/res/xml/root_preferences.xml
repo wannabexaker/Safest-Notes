@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="General">
+
+        <SwitchPreferenceCompat
+            app:key="dark_mode"
+            app:title="Dark Mode" />
+
+        <ListPreference
+            app:key="language"
+            app:title="Language"
+            app:entries="@array/language_entries"
+            app:entryValues="@array/language_values"
+            app:defaultValue="en"
+            app:useSimpleSummaryProvider="true"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Security">
+
+        <Preference
+            app:key="master_password"
+            app:title="Set Master Password" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

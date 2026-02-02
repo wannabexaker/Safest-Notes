@@ -76,6 +76,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
     
     fun openAllNotes(){
+        supportFragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
         viewModel.setCurrentFolder(null)
         currentFolderId = null
         supportFragmentManager.beginTransaction()
@@ -86,7 +87,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         viewModel.setCurrentFolder(folder.id)
         currentFolderId = folder.id
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, NotesFragment())
+            .replace(R.id.fragment_container, FolderNotesFragment.newInstance(folder.id))
             .addToBackStack(null) // Allow user to go back to the parent folder
             .commit()
     }
@@ -134,6 +135,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         viewModel.setShowFavoritesOnly(false)
         viewModel.setShowDeleted(false)
+        viewModel.setCurrentFolder(null)
+        currentFolderId = null
         
         when (item.itemId) {
             R.id.nav_all_notes -> openAllNotes()
@@ -161,6 +164,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         } else {
             if(supportFragmentManager.backStackEntryCount > 0){
                 supportFragmentManager.popBackStack()
+                viewModel.setCurrentFolder(null)
+                currentFolderId = null
             } else {
                 super.onBackPressed()
             }

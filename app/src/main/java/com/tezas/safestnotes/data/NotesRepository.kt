@@ -26,4 +26,12 @@ class NotesRepository(private val noteDao: NoteDao, private val folderDao: Folde
     suspend fun insertFolder(folder: Folder) {
         folderDao.insert(folder)
     }
+
+    suspend fun insertFolderAndGetId(folder: Folder): Int {
+        return folderDao.insert(folder).toInt()
+    }
+
+    suspend fun getFolderByName(name: String): Folder? {
+        return folderDao.getFolderByName(name)
+    }
 }

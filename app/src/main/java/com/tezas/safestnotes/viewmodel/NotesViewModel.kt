@@ -85,5 +85,44 @@ class NotesViewModel(private val repository: NotesRepository) : ViewModel() {
     fun deleteMultiple(items: List<Any>) { viewModelScope.launch { items.forEach { if (it is Note) { repository.update(it.copy(isDeleted = true)) } } } }
     fun moveMultiple(items: List<Any>, folderId: Int) { viewModelScope.launch { items.forEach { if (it is Note) { repository.update(it.copy(folderId = folderId)) } } } }
 
+    fun moveNotesToFolder(notes: List<Note>, folderId: Int?) {
+        viewModelScope.launch {
+            notes.forEach { repository.update(it.copy(folderId = folderId)) }
+        }
+    }
+
+    fun copyNotesToFolder(notes: List<Note>, folderId: Int?) {
+        viewModelScope.launch {
+            notes.forEach { repository.insert(it.copy(id = 0, folderId = folderId)) }
+        }
+    }
+
+    fun duplicateNotes(notes: List<Note>) {
+        viewModelScope.launch {
+            notes.forEach { repository.insert(it.copy(id = 0)) }
+        }
+    }
+
+    fun moveToSecureFolder(notes: List<Note>) {
+        viewModelScope.launch {
+            val secureFolder = getOrCreateSecureFolder()
+            notes.forEach { repository.update(it.copy(folderId = secureFolder.id, isSecure = true)) }
+        }
+    }
+
+    fun copyToSecureFolder(notes: List<Note>) {
+        viewModelScope.launch {
+            val secureFolder = getOrCreateSecureFolder()
+            notes.forEach { repository.insert(it.copy(id = 0, folderId = secureFolder.id, isSecure = true)) }
+        }
+    }
+
     suspend fun getNoteById(id: Int): Note? = repository.getNoteById(id)
+
+    private suspend fun getOrCreateSecureFolder(): Folder {
+        val existing = repository.getFolderByName("Secure")
+        if (existing != null) return existing
+        val id = repository.insertFolderAndGetId(Folder(name = "Secure"))
+        return Folder(id = id, name = "Secure")
+    }
 }

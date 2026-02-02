@@ -3,10 +3,35 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_details"
+        android:title="Details"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_duplicate"
+        android:title="Duplicate"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_move"
         android:icon="@drawable/ic_folder_move"
         android:title="Move"
         app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_copy"
+        android:title="Copy"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_move_secure"
+        android:title="Move to Secure"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_copy_secure"
+        android:title="Copy to Secure"
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_share"

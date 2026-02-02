@@ -3,8 +3,11 @@ package com.tezas.safestnotes
 import android.content.Intent
 import android.os.Bundle
 import android.text.Html
+import android.text.format.DateFormat
 import android.view.*
 import android.widget.EditText
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -23,13 +26,14 @@ import com.tezas.safestnotes.viewmodel.ViewMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class NotesFragment : Fragment() {
+open class NotesFragment : Fragment() {
 
     private val viewModel: NotesViewModel by activityViewModels()
     private lateinit var notesAdapter: NotesAdapter
     private var itemsList: List<Any> = emptyList()
     private lateinit var recyclerView: RecyclerView
     private var actionMode: androidx.appcompat.view.ActionMode? = null
+    private var backCallback: OnBackPressedCallback? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -45,6 +49,8 @@ class NotesFragment : Fragment() {
         observeViewModel()
         setupFabs(view)
         setupSwipeToDelete()
+        setupBackHandler()
+        viewModel.setCurrentFolder(getFolderIdArg())
     }
 
     private fun setupRecyclerView() {
@@ -55,6 +61,10 @@ class NotesFragment : Fragment() {
                 } else {
                     val intent = Intent(requireContext(), AddEditNoteActivity::class.java)
                     intent.putExtra("note_id", note.id)
+                    getFolderIdArg()?.let { id ->
+                        intent.putExtra(AddEditNoteActivity.EXTRA_FOLDER_ID, id)
+                        intent.putExtra(AddEditNoteActivity.EXTRA_FROM_FOLDER_CONTEXT, true)
+                    }
                     startActivity(intent)
                 }
             },
@@ -84,6 +94,7 @@ class NotesFragment : Fragment() {
             actionMode?.title = "$count selected"
             actionMode?.invalidate()
         }
+        updateBackHandlerEnabled()
     }
 
     private val actionModeCallback = object : androidx.appcompat.view.ActionMode.Callback {
@@ -96,13 +107,52 @@ class NotesFragment : Fragment() {
 
         override fun onActionItemClicked(mode: androidx.appcompat.view.ActionMode, item: MenuItem): Boolean {
             return when (item.itemId) {
+                R.id.action_details -> {
+                    showDetailsDialog()
+                    true
+                }
+                R.id.action_duplicate -> {
+                    val selectedNotes = getSelectedNotes()
+                    if (selectedNotes.isNotEmpty()) {
+                        viewModel.duplicateNotes(selectedNotes)
+                    } else {
+                        showNoNotesSelectedMessage()
+                    }
+                    mode.finish()
+                    true
+                }
                 R.id.action_delete_contextual -> {
                     viewModel.deleteMultiple(notesAdapter.selectedItems.toList())
                     mode.finish()
                     true
                 }
                 R.id.action_move -> {
-                    showMoveDialog()
+                    showMoveDialog(isCopy = false)
+                    mode.finish()
+                    true
+                }
+                R.id.action_copy -> {
+                    showMoveDialog(isCopy = true)
+                    mode.finish()
+                    true
+                }
+                R.id.action_move_secure -> {
+                    val selectedNotes = getSelectedNotes()
+                    if (selectedNotes.isNotEmpty()) {
+                        viewModel.moveToSecureFolder(selectedNotes)
+                    } else {
+                        showNoNotesSelectedMessage()
+                    }
+                    mode.finish()
+                    true
+                }
+                R.id.action_copy_secure -> {
+                    val selectedNotes = getSelectedNotes()
+                    if (selectedNotes.isNotEmpty()) {
+                        viewModel.copyToSecureFolder(selectedNotes)
+                    } else {
+                        showNoNotesSelectedMessage()
+                    }
                     mode.finish()
                     true
                 }
@@ -118,6 +168,7 @@ class NotesFragment : Fragment() {
         override fun onDestroyActionMode(mode: androidx.appcompat.view.ActionMode) {
             notesAdapter.clearSelections()
             actionMode = null
+            updateBackHandlerEnabled()
         }
     }
 
@@ -136,16 +187,25 @@ class NotesFragment : Fragment() {
         }
     }
 
-    private fun showMoveDialog() {
+    private fun showMoveDialog(isCopy: Boolean) {
         lifecycleScope.launch {
             val folders = viewModel.folders.first()
-            val folderNames = folders.map { it.name }.toTypedArray()
+            val folderNames = (listOf("No Folder") + folders.map { it.name }).toTypedArray()
 
             AlertDialog.Builder(requireContext())
-                .setTitle("Move to...")
+                .setTitle(if (isCopy) "Copy to..." else "Move to...")
                 .setItems(folderNames) { _, which ->
-                    val selectedFolder = folders[which]
-                    viewModel.moveMultiple(notesAdapter.selectedItems.toList(), selectedFolder.id)
+                    val selectedNotes = getSelectedNotes()
+                    if (selectedNotes.isEmpty()) {
+                        showNoNotesSelectedMessage()
+                        return@setItems
+                    }
+                    val selectedFolderId = if (which == 0) null else folders[which - 1].id
+                    if (isCopy) {
+                        viewModel.copyNotesToFolder(selectedNotes, selectedFolderId)
+                    } else {
+                        viewModel.moveNotesToFolder(selectedNotes, selectedFolderId)
+                    }
                 }
                 .show()
         }
@@ -184,10 +244,14 @@ class NotesFragment : Fragment() {
     }
 
     private fun setupFabs(view: View) {
+        if (getFolderIdArg() != null) {
+            view.findViewById<FloatingActionButton>(R.id.fab_new_folder).visibility = View.GONE
+        }
         view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             val intent = Intent(requireContext(), AddEditNoteActivity::class.java)
-            (activity as? MainActivity)?.getCurrentFolderId()?.let {
-                intent.putExtra("folder_id", it)
+            getFolderIdArg()?.let {
+                intent.putExtra(AddEditNoteActivity.EXTRA_FOLDER_ID, it)
+                intent.putExtra(AddEditNoteActivity.EXTRA_FROM_FOLDER_CONTEXT, true)
             }
             startActivity(intent)
         }
@@ -228,5 +292,72 @@ class NotesFragment : Fragment() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun setupBackHandler() {
+        backCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                if (actionMode != null) {
+                    actionMode?.finish()
+                    return
+                }
+                if (getFolderIdArg() != null) {
+                    parentFragmentManager.popBackStack()
+                    return
+                }
+                isEnabled = false
+                requireActivity().onBackPressed()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback!!)
+        updateBackHandlerEnabled()
+    }
+
+    private fun updateBackHandlerEnabled() {
+        backCallback?.isEnabled = actionMode != null || getFolderIdArg() != null
+    }
+
+    private fun getSelectedNotes(): List<Note> {
+        return notesAdapter.selectedItems.filterIsInstance<Note>()
+    }
+
+    private fun showNoNotesSelectedMessage() {
+        Toast.makeText(requireContext(), "Select at least one note", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showDetailsDialog() {
+        val selectedNotes = getSelectedNotes()
+        if (selectedNotes.size != 1) {
+            showNoNotesSelectedMessage()
+            return
+        }
+        val note = selectedNotes.first()
+        val folderName = viewModel.folders.value.firstOrNull { it.id == note.folderId }?.name ?: "No Folder"
+        val timestamp = DateFormat.format("MMM d, yyyy h:mm a", note.timestamp)
+        val secureStatus = if (note.isSecure) "Yes" else "No"
+        val message = "Last edited: $timestamp\nFolder: $folderName\nSecure: $secureStatus"
+        AlertDialog.Builder(requireContext())
+            .setTitle(note.title.ifBlank { "Untitled" })
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    protected open fun getFolderIdArg(): Int? {
+        val args = arguments ?: return null
+        return if (args.containsKey(ARG_FOLDER_ID)) args.getInt(ARG_FOLDER_ID) else null
+    }
+
+    companion object {
+        const val ARG_FOLDER_ID = "arg_folder_id"
+        fun newInstance(folderId: Int?): NotesFragment {
+            val fragment = NotesFragment()
+            if (folderId != null) {
+                val args = Bundle()
+                args.putInt(ARG_FOLDER_ID, folderId)
+                fragment.arguments = args
+            }
+            return fragment
+        }
     }
 }

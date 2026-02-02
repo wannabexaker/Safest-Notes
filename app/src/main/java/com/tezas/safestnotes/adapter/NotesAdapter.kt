@@ -1,15 +1,14 @@
 package com.tezas.safestnotes.adapter
 
-import android.annotation.SuppressLint
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.WebView
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.text.HtmlCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.tezas.safestnotes.R
 import com.tezas.safestnotes.data.Folder
 import com.tezas.safestnotes.data.Note
@@ -30,13 +29,14 @@ class NotesAdapter(
 
     inner class NoteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val titleText: TextView = itemView.findViewById(R.id.noteTitle)
+        val snippetText: TextView = itemView.findViewById(R.id.noteSnippet)
         val favoriteIcon: ImageView = itemView.findViewById(R.id.favorite_icon)
-        val webView: WebView = itemView.findViewById(R.id.note_preview_webview)
         val cardView: CardView = itemView as CardView
     }
 
     inner class FolderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val folderName: TextView = itemView.findViewById(R.id.folderName)
+        val cardView: MaterialCardView = itemView as MaterialCardView
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -57,20 +57,24 @@ class NotesAdapter(
 
     override fun getItemCount(): Int = items.size
 
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val currentItem = items[position]
-        
+
         when (holder.itemViewType) {
             TYPE_NOTE -> {
                 val noteHolder = holder as NoteViewHolder
                 val note = currentItem as Note
-                noteHolder.titleText.text = if (note.title.isNotBlank()) note.title else "Untitled Note"
+                noteHolder.titleText.text = if (note.title.isNotBlank()) note.title else "Untitled"
                 noteHolder.favoriteIcon.visibility = if (note.isFavorite) View.VISIBLE else View.GONE
 
-                noteHolder.webView.settings.javaScriptEnabled = true
-                noteHolder.webView.isClickable = false
-                noteHolder.webView.loadDataWithBaseURL(null, note.content, "text/html", "UTF-8", null)
+                val snippet = HtmlCompat.fromHtml(note.content, HtmlCompat.FROM_HTML_MODE_LEGACY)
+                    .toString().trim()
+                if (snippet.isNotEmpty()) {
+                    noteHolder.snippetText.visibility = View.VISIBLE
+                    noteHolder.snippetText.text = snippet
+                } else {
+                    noteHolder.snippetText.visibility = View.GONE
+                }
 
                 noteHolder.itemView.setOnClickListener { onNoteClick(note, position) }
                 noteHolder.itemView.setOnLongClickListener {
@@ -78,12 +82,7 @@ class NotesAdapter(
                     true
                 }
 
-                // Visual feedback for selection
-                if (selectedItems.contains(note)) {
-                    noteHolder.cardView.setCardBackgroundColor(Color.LTGRAY)
-                } else {
-                    noteHolder.cardView.setCardBackgroundColor(Color.WHITE)
-                }
+                noteHolder.cardView.alpha = if (selectedItems.contains(note)) 0.65f else 1f
             }
             TYPE_FOLDER -> {
                 val folderHolder = holder as FolderViewHolder
@@ -94,6 +93,8 @@ class NotesAdapter(
                     onLongPress(folder, position)
                     true
                 }
+                folderHolder.cardView.isCheckable = true
+                folderHolder.cardView.isChecked = selectedItems.contains(folder)
             }
         }
     }

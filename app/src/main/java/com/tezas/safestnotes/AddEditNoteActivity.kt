@@ -4,10 +4,14 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Spinner
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,9 +30,12 @@ class AddEditNoteActivity : AppCompatActivity() {
     private lateinit var titleEdit: EditText
     private lateinit var richEditor: CustomRichEditor 
     private lateinit var folderSpinner: Spinner
+    private lateinit var folderLabel: TextView
     private var currentNote: Note? = null
     private var initialNoteState: Note? = null
     private var allFolders: List<Folder> = emptyList()
+    private var fixedFolderId: Int? = null
+    private var openedFromFolderContext: Boolean = false
 
     private val viewModel: NotesViewModel by viewModels {
         val database = NotesDatabase.getDatabase(application)
@@ -42,6 +49,19 @@ class AddEditNoteActivity : AppCompatActivity() {
         titleEdit = findViewById(R.id.titleEdit)
         richEditor = findViewById(R.id.richEditor)
         folderSpinner = findViewById(R.id.folder_spinner)
+        folderLabel = findViewById(R.id.folder_label)
+
+        richEditor.settings.javaScriptEnabled = true
+        richEditor.settings.domStorageEnabled = true
+        richEditor.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                v.requestFocus()
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(richEditor, InputMethodManager.SHOW_IMPLICIT)
+            }
+            false
+        }
 
         setupToolbarActions()
         loadNoteData()
@@ -61,7 +81,8 @@ class AddEditNoteActivity : AppCompatActivity() {
 
     private fun loadNoteData(){
         val noteId = intent.getIntExtra("note_id", -1).takeIf { it != -1 }
-        val folderIdFromIntent = intent.getIntExtra("folder_id", -1).takeIf { it != -1 }
+        val folderIdFromIntent = intent.getIntExtra(EXTRA_FOLDER_ID, -1).takeIf { it != -1 }
+        openedFromFolderContext = intent.getBooleanExtra(EXTRA_FROM_FOLDER_CONTEXT, false)
 
         lifecycleScope.launch {
             allFolders = viewModel.folders.first()
@@ -76,15 +97,11 @@ class AddEditNoteActivity : AppCompatActivity() {
                 currentNote?.let { note ->
                     titleEdit.setText(note.title)
                     richEditor.html = note.content
-                    val folderIndex = allFolders.indexOfFirst { f -> f.id == note.folderId }.let { index -> if(index == -1) 0 else index + 1}
-                    folderSpinner.setSelection(folderIndex)
+                    updateFolderUi(note.folderId)
                     invalidateOptionsMenu()
                 }
             } else {
-                folderIdFromIntent?.let { id ->
-                    val folderIndex = allFolders.indexOfFirst { f -> f.id == id }.let { index -> if(index == -1) 0 else index + 1}
-                    folderSpinner.setSelection(folderIndex)
-                }
+                updateFolderUi(folderIdFromIntent)
             }
         }
     }
@@ -145,6 +162,10 @@ class AddEditNoteActivity : AppCompatActivity() {
                 }
                 return true
             }
+            R.id.action_move -> {
+                showMoveDialog()
+                return true
+            }
             R.id.action_delete -> {
                 showDeleteConfirmationDialog()
                 return true
@@ -177,8 +198,12 @@ class AddEditNoteActivity : AppCompatActivity() {
     private fun saveNote() {
         val title = titleEdit.text.toString().trim()
         val content = richEditor.html ?: ""
-        val selectedFolderPosition = folderSpinner.selectedItemPosition
-        val folderId = if (selectedFolderPosition > 0) allFolders[selectedFolderPosition - 1].id else null
+        val folderId = if (folderSpinner.visibility == View.VISIBLE) {
+            val selectedFolderPosition = folderSpinner.selectedItemPosition
+            if (selectedFolderPosition > 0) allFolders[selectedFolderPosition - 1].id else null
+        } else {
+            fixedFolderId
+        }
 
         val isNewNote = currentNote == null
         
@@ -207,5 +232,43 @@ class AddEditNoteActivity : AppCompatActivity() {
                 viewModel.updateNote(noteToSave)
             }
         }
+    }
+
+    private fun showMoveDialog() {
+        val folderNames = listOf("No Folder") + allFolders.map { it.name }
+        AlertDialog.Builder(this)
+            .setTitle("Move to folder")
+            .setItems(folderNames.toTypedArray()) { _, which ->
+                val selectedFolderId = if (which == 0) null else allFolders[which - 1].id
+                fixedFolderId = selectedFolderId
+                updateFolderUi(selectedFolderId)
+                currentNote = currentNote?.copy(folderId = selectedFolderId)
+            }
+            .show()
+    }
+
+    private fun updateFolderUi(folderId: Int?) {
+        if (openedFromFolderContext) {
+            folderSpinner.visibility = View.GONE
+            folderLabel.visibility = View.VISIBLE
+            val labelText = if (folderId == null) {
+                "No Folder"
+            } else {
+                allFolders.firstOrNull { it.id == folderId }?.name ?: "No Folder"
+            }
+            folderLabel.text = "Folder: $labelText"
+            fixedFolderId = folderId
+        } else {
+            folderSpinner.visibility = View.VISIBLE
+            folderLabel.visibility = View.GONE
+            val folderIndex = allFolders.indexOfFirst { f -> f.id == folderId }
+                .let { index -> if (index == -1) 0 else index + 1 }
+            folderSpinner.setSelection(folderIndex)
+        }
+    }
+
+    companion object {
+        const val EXTRA_FOLDER_ID = "folder_id"
+        const val EXTRA_FROM_FOLDER_CONTEXT = "from_folder_context"
     }
 }

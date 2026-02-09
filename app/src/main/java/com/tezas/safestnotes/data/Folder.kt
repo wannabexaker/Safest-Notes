@@ -6,5 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "folders")
 data class Folder(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val name: String
+    val name: String = "",
+    val parentFolderId: Int? = null,
+    val accentColor: Int = 0
 )

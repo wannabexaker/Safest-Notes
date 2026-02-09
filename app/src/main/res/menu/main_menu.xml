@@ -10,17 +10,41 @@
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
 
     <item
-        android:id="@+id/action_more"
+        android:id="@+id/action_options"
         android:icon="@drawable/ic_more_vert"
-        android:title="More"
+        android:title="Options"
         app:showAsAction="ifRoom">
         <menu>
             <item
-                android:id="@+id/action_view_mode"
-                android:title="Toggle View" />
+                android:id="@+id/action_sort_menu"
+                android:title="Sort">
+                <menu>
+                    <item android:id="@+id/action_sort_title_asc" android:title="Title (A-Z)" />
+                    <item android:id="@+id/action_sort_title_desc" android:title="Title (Z-A)" />
+                    <item android:id="@+id/action_sort_size_letters_asc" android:title="Size (letters) ↑" />
+                    <item android:id="@+id/action_sort_size_letters_desc" android:title="Size (letters) ↓" />
+                    <item android:id="@+id/action_sort_size_kb_asc" android:title="Size (kb) ↑" />
+                    <item android:id="@+id/action_sort_size_kb_desc" android:title="Size (kb) ↓" />
+                    <item android:id="@+id/action_sort_date_created_asc" android:title="Date Created ↑" />
+                    <item android:id="@+id/action_sort_date_created_desc" android:title="Date Created ↓" />
+                    <item android:id="@+id/action_sort_date_modified_asc" android:title="Date Modified ↑" />
+                    <item android:id="@+id/action_sort_date_modified_desc" android:title="Date Modified (Default)" />
+                </menu>
+            </item>
             <item
-                android:id="@+id/action_sort_by"
-                android:title="Sort by..." />
+                android:id="@+id/action_view_menu"
+                android:title="View">
+                <menu>
+                    <item android:id="@+id/action_view_grid" android:title="Grid" />
+                    <item android:id="@+id/action_view_list" android:title="List" />
+                </menu>
+            </item>
+            <item
+                android:id="@+id/action_select_mode"
+                android:title="Select" />
+            <item
+                android:id="@+id/action_create_folder"
+                android:title="Create Folder" />
         </menu>
     </item>
 

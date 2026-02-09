@@ -9,6 +9,13 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_read_mode"
+        android:title="Read"
+        android:icon="@drawable/ic_lock"
+        android:checkable="true"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_move"
         android:title="Move"
         android:icon="@drawable/ic_folder_move"

@@ -1,4 +1,6 @@
-package com.tezas.safestnotes
+package com.tezas.safestnotes.ui
+
+import com.tezas.safestnotes.R
 
 import android.os.Bundle
 

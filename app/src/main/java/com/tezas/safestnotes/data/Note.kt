@@ -6,9 +6,10 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "notes")
 data class Note(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    var title: String,
-    var content: String, // Can now be encrypted content
-    val timestamp: Long,
+    var title: String = "",
+    var content: String = "", // Can now be encrypted content
+    val timestamp: Long = 0L,
+    val createdTimestamp: Long = 0L,
     var isFavorite: Boolean = false,
     var isDeleted: Boolean = false,
     var folderId: Int? = null,

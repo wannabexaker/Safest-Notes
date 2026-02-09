@@ -2,47 +2,45 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1f1e21">
+    android:background="?android:colorBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/editor_top_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary" />
 
     <LinearLayout
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:layout_above="@+id/editor_toolbar_container">
+        android:layout_above="@+id/editor_toolbar_container"
+        android:layout_below="@+id/editor_top_toolbar">
 
         <EditText
             android:id="@+id/titleEdit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Title"
-            android:textColor="#FFFFFF"
-            android:background="#2a292d"
+            android:textColor="?attr/colorOnSurface"
+            android:background="?attr/colorSurface"
             android:padding="10dp"
-            android:textColorHint="#AAAAAA"
-            android:layout_marginBottom="10dp" />
-
-        <TextView
-            android:id="@+id/folder_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#AAAAAA"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
             android:layout_marginBottom="10dp"
-            android:visibility="gone" />
+            android:singleLine="true"
+            android:imeOptions="actionNext"
+            android:inputType="textCapSentences"
+            android:nextFocusDown="@id/richEditor"
+            android:nextFocusForward="@id/richEditor" />
 
-        <Spinner
-            android:id="@+id/folder_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:background="#2a292d" />
-
-        <com.tezas.safestnotes.CustomRichEditor
+        <com.tezas.safestnotes.ui.CustomRichEditor
             android:id="@+id/richEditor"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#2a292d" />
+            android:background="?attr/colorSurface"
+            android:focusableInTouchMode="true" />
 
     </LinearLayout>
 
@@ -51,8 +49,27 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true">
-        
-        <include layout="@layout/editor_toolbar" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/editor_toolbar_toggle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:src="@drawable/ic_chevron_down"
+                android:tint="@color/brand_purple"
+                android:background="@android:color/transparent"
+                android:contentDescription="Toggle formatting panel" />
+
+            <include
+                android:id="@+id/editor_toolbar_panel"
+                layout="@layout/editor_toolbar" />
+
+        </LinearLayout>
         
     </FrameLayout>
 

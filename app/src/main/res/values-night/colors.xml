@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="note_card_light">#FF1B1B1F</color>
+    <color name="note_card_dark">#FF1B1B1F</color>
+    <color name="note_page_light">#FF24242A</color>
+    <color name="note_page_dark">#FF24242A</color>
+    <color name="selection_scrim">#338046D9</color>
+</resources>

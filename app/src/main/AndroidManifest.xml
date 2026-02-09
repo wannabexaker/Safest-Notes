@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:name=".SafestNotesApp"
+        android:name=".ui.SafestNotesApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -16,7 +16,7 @@
         android:theme="@style/Theme.SafestNotes"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.SafestNotes">
@@ -26,8 +26,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AddEditNoteActivity" />
-        <activity android:name=".MasterPasswordActivity" />
+        <activity
+            android:name=".ui.AddEditNoteActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.MasterPasswordActivity" />
     </application>
 
 </manifest>

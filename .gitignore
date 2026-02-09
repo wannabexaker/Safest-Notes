@@ -1,15 +1,37 @@
+# Responsibility: Git ignore rules for Android Studio projects.
+# Feature area: Repository hygiene.
+
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+.gradle/
 local.properties
+.idea/
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.log
+*.tmp
+*.bak
+
+# Keystore / signing
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Android Studio / IntelliJ
+out/
+.idea/.name
+.idea/*.xml
+!.idea/vcs.xml
+
+# Lint / reports
+lint-results*.xml
+lint-report*.html
+
+# OS / editor
+Thumbs.db
+*.swp

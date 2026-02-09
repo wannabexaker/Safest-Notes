@@ -2,65 +2,103 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="220dp"
     android:layout_margin="8dp"
     android:clickable="true"
     android:focusable="true"
-    android:focusableInTouchMode="true"
     android:foreground="?attr/selectableItemBackground"
     android:descendantFocusability="blocksDescendants"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:cardBackgroundColor="?attr/colorSurface">
+    app:cardBackgroundColor="@color/note_card_light">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@color/note_page_light"
+                android:clickable="false"
+                android:focusable="false">
+
+                <TextView
+                    android:id="@+id/notePreview"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_margin="8dp"
+                    android:ellipsize="end"
+                    android:maxLines="6"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:clickable="false"
+                    android:focusable="false"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <TextView
                 android:id="@+id/noteTitle"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                android:layout_marginTop="8dp"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
                 android:textColor="?attr/colorOnSurface"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:clickable="false"
                 android:focusable="false" />
 
-            <ImageView
-                android:id="@+id/favorite_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_star"
-                android:visibility="gone"
+            <TextView
+                android:id="@+id/noteDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:maxLines="1"
+                android:ellipsize="end"
                 android:clickable="false"
                 android:focusable="false" />
+
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/noteSnippet"
+        <View
+            android:id="@+id/selection_scrim"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:maxLines="3"
-            android:ellipsize="end"
-            android:visibility="gone"
-            android:clickable="false"
-            android:focusable="false" />
+            android:layout_height="match_parent"
+            android:background="@color/selection_scrim"
+            android:visibility="gone" />
 
-    </LinearLayout>
+        <ImageView
+            android:id="@+id/selection_check"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="10dp"
+            android:src="@drawable/ic_check_circle"
+            android:tint="@color/brand_purple"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/note_drag_handle"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="8dp"
+            android:src="@drawable/ic_drag_handle"
+            android:tint="@color/brand_purple" />
+
+    </FrameLayout>
 
 </androidx.cardview.widget.CardView>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/surface_dark"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/card_border">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:minHeight="90dp">
+
+        <!-- Accent bar -->
+        <View
+            android:id="@+id/folderAccentBar"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:background="@color/purple_primary" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
+
+            <!-- Folder icon -->
+            <ImageView
+                android:id="@+id/folderIconImg"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_folder"
+                android:importantForAccessibility="no" />
+
+            <!-- Name + count column -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:id="@+id/folderManagerName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/folderManagerCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- Lock badge -->
+            <ImageView
+                android:id="@+id/folderManagerLock"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_lock"
+                android:tint="@color/purple_light"
+                android:visibility="gone"
+                android:importantForAccessibility="no" />
+
+            <!-- 3-dot context menu — 44dp min touch target -->
+            <ImageButton
+                android:id="@+id/folderManagerMore"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@drawable/ic_more_vert"
+                android:tint="@color/text_muted"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="10dp"
+                android:contentDescription="Folder options" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

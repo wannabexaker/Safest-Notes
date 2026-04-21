@@ -1,76 +1,221 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Rich-text formatting toolbar — 7 groups, scrollable.
+    Groups: [Style] | [Align] | [Lists] | [Heading] | [Indent] | [Color/Size] | [Misc]
+-->
 <HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="?attr/colorSurface">
+    android:layout_height="48dp"
+    android:background="@color/nav_background"
+    android:scrollbars="none"
+    android:overScrollMode="never"
+    android:fillViewport="false">
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp">
+
+        <!-- ══ GROUP 0 · Quick Actions ══════════════════════════════════ -->
+
+        <ImageButton
+            android:id="@+id/action_undo"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_undo"
+            android:contentDescription="Undo" />
+
+        <ImageButton
+            android:id="@+id/action_redo"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_redo"
+            android:contentDescription="Redo" />
+
+        <ImageButton
+            android:id="@+id/action_insert_location"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_my_location"
+            android:contentDescription="Insert GPS location" />
+
+        <View style="@style/ToolbarDivider" />
+
+        <!-- ══ GROUP 1 · Voice (Dictate + Read Aloud side-by-side) ══════ -->
+
+        <ImageButton
+            android:id="@+id/action_dictate"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_mic"
+            android:tint="@color/purple_light"
+            android:contentDescription="Dictate (Speech to Text)" />
+
+        <ImageButton
+            android:id="@+id/action_read_aloud_toolbar"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_volume_up"
+            android:tint="@color/purple_light"
+            android:contentDescription="Read Aloud (Text to Speech)" />
+
+        <View style="@style/ToolbarDivider" />
+
+        <!-- ══ GROUP 1 · Text Style ══════════════════════════════════════ -->
 
         <ImageButton
             android:id="@+id/action_bold"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_bold" />
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_bold"
+            android:contentDescription="Bold" />
 
         <ImageButton
             android:id="@+id/action_italic"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_italic" />
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_italic"
+            android:contentDescription="Italic" />
 
         <ImageButton
             android:id="@+id/action_underline"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_underline" />
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_underline"
+            android:contentDescription="Underline" />
 
         <ImageButton
             android:id="@+id/action_strikethrough"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_strikethrough" />
-            
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_strikethrough"
+            android:contentDescription="Strikethrough" />
+
+        <ImageButton
+            android:id="@+id/action_superscript"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_superscript"
+            android:contentDescription="Superscript" />
+
+        <ImageButton
+            android:id="@+id/action_subscript"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_subscript"
+            android:contentDescription="Subscript" />
+
+        <View style="@style/ToolbarDivider" />
+
+        <!-- ══ GROUP 2 · Alignment ═══════════════════════════════════════ -->
+
+        <ImageButton
+            android:id="@+id/action_align_left"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_align_left"
+            android:contentDescription="Align left" />
+
+        <ImageButton
+            android:id="@+id/action_align_center"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_align_center"
+            android:contentDescription="Align center" />
+
+        <ImageButton
+            android:id="@+id/action_align_right"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_align_right"
+            android:contentDescription="Align right" />
+
+        <View style="@style/ToolbarDivider" />
+
+        <!-- ══ GROUP 3 · Lists ═══════════════════════════════════════════ -->
+
         <ImageButton
             android:id="@+id/action_bullet"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_list_bulleted" />
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_list_bulleted"
+            android:contentDescription="Bullet list" />
+
+        <ImageButton
+            android:id="@+id/action_numbered"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_list_numbered"
+            android:contentDescription="Numbered list" />
 
         <ImageButton
             android:id="@+id/action_checkbox"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_checklist" />
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_checklist"
+            android:contentDescription="Checklist" />
+
+        <View style="@style/ToolbarDivider" />
+
+        <!-- ══ GROUP 4 · Headings ════════════════════════════════════════ -->
+
+        <TextView
+            android:id="@+id/action_h1"
+            style="@style/ToolbarHeadingBtn"
+            android:text="H1"
+            android:contentDescription="Heading 1" />
+
+        <TextView
+            android:id="@+id/action_h2"
+            style="@style/ToolbarHeadingBtn"
+            android:text="H2"
+            android:contentDescription="Heading 2" />
+
+        <TextView
+            android:id="@+id/action_h3"
+            style="@style/ToolbarHeadingBtn"
+            android:text="H3"
+            android:contentDescription="Heading 3" />
+
+        <View style="@style/ToolbarDivider" />
+
+        <!-- ══ GROUP 5 · Indent ══════════════════════════════════════════ -->
+
+        <ImageButton
+            android:id="@+id/action_indent"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_indent_increase"
+            android:contentDescription="Increase indent" />
+
+        <ImageButton
+            android:id="@+id/action_outdent"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_indent_decrease"
+            android:contentDescription="Decrease indent" />
+
+        <View style="@style/ToolbarDivider" />
+
+        <!-- ══ GROUP 6 · Color & Size ════════════════════════════════════ -->
 
         <ImageButton
             android:id="@+id/action_txt_color"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_color_text" />
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_color_text"
+            android:contentDescription="Text color" />
 
         <ImageButton
             android:id="@+id/action_bg_color"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_color_fill" />
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_color_fill"
+            android:contentDescription="Highlight color" />
 
         <ImageButton
             android:id="@+id/action_font_size"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:tint="@color/brand_purple"
-            android:src="@drawable/ic_format_size" />
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_size"
+            android:contentDescription="Font size" />
+
+        <View style="@style/ToolbarDivider" />
+
+        <!-- ══ GROUP 7 · Misc ════════════════════════════════════════════ -->
+
+        <ImageButton
+            android:id="@+id/action_hr"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_hr"
+            android:contentDescription="Insert divider" />
+
+        <ImageButton
+            android:id="@+id/action_clear_format"
+            style="@style/ToolbarBtn"
+            android:src="@drawable/ic_format_clear"
+            android:contentDescription="Clear formatting" />
 
     </LinearLayout>
 </HorizontalScrollView>

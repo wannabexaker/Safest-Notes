@@ -58,7 +58,13 @@ dependencies {
     // ViewModel
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation("androidx.lifecycle:lifecycle-process:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-common-java8:2.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // Security — master password + per-note encryption
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
 
     // Testing
     testImplementation(libs.junit)

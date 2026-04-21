@@ -35,3 +35,14 @@ lint-report*.html
 # OS / editor
 Thumbs.db
 *.swp
+
+# Obsidian (local vault config)
+.obsidian/
+
+# Claude/Cursor local metadata
+.claude/
+.cursor/
+CLAUDE.md
+
+# graphify outputs (generated)
+graphify-out/

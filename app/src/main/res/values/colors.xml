@@ -1,20 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand_purple">#FF8046D9</color>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
+
+    <!-- ===== Obsidian Dark Purple palette ===== -->
+    <color name="background_obsidian">#13131F</color>
+    <color name="surface_dark">#1E1E2E</color>
+    <color name="surface_variant">#2A2A3E</color>
+    <color name="nav_background">#0D0D1A</color>
+
+    <!-- Material3 surface containers (dialogs, sheets, chips) -->
+    <color name="surface_container">#1A1A2C</color>
+    <color name="surface_container_high">#222236</color>
+    <color name="surface_container_low">#161624</color>
+
+    <!-- Accent -->
+    <color name="purple_primary">#7C3AED</color>
+    <color name="purple_light">#A78BFA</color>
+    <color name="purple_dim">#3D2D6B</color>
+
+    <!-- Text -->
+    <color name="text_primary">#E8E8F0</color>
+    <color name="text_secondary">#9898B0</color>
+    <color name="text_muted">#5C5870</color>
+
+    <!-- Semantic -->
+    <color name="favorite_gold">#F5C518</color>
+    <color name="danger_red">#E05252</color>
+    <color name="card_border">#2A2A3E</color>
+    <color name="selection_stroke">#7C3AED</color>
+
+    <!-- ===== Legacy aliases (keep for existing layout/code refs) ===== -->
+    <color name="brand_purple">#7C3AED</color>
+    <color name="selection_scrim">#4D3D2D6B</color>
+    <color name="background_dark">#13131F</color>
+    <color name="background_light">#13131F</color>
+    <color name="note_card_dark">#1E1E2E</color>
+    <color name="note_card_light">#1E1E2E</color>
+    <color name="note_page_dark">#1E1E2E</color>
+    <color name="note_page_light">#1E1E2E</color>
+    <color name="text_gray_dark">#E8E8F0</color>
+    <color name="text_gray_light">#9898B0</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="text_gray_light">#FF4D4D4D</color>
-    <color name="text_gray_dark">#FFCCCCCC</color>
-    <color name="background_light">#FFFFFFFF</color>
-    <color name="background_dark">#FF000000</color>
-    <color name="note_card_light">#FFF3F3F6</color>
-    <color name="note_card_dark">#FF1B1B1F</color>
-    <color name="note_page_light">#FFFFFFFF</color>
-    <color name="note_page_dark">#FF24242A</color>
-    <color name="selection_scrim">#338046D9</color>
+
 </resources>

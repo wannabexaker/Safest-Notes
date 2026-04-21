@@ -1,22 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- File responsibility: Settings and preference definitions. Feature area: Preferences, editor focus behavior. -->
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:iconSpaceReserved="false">
 
-    <PreferenceCategory app:title="General">
+    <!-- Appearance -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="Appearance">
 
         <SwitchPreferenceCompat
             app:key="dark_mode"
-            app:title="Dark Mode" />
+            app:title="Dark Mode"
+            app:summary="Use Obsidian dark theme"
+            app:defaultValue="true" />
 
-        <!-- Keep focus behavior user-controlled to match new vs existing note expectations. -->
+        <ListPreference
+            app:key="nav_style"
+            app:title="Navigation Style"
+            app:summary="%s"
+            app:entries="@array/nav_style_entries"
+            app:entryValues="@array/nav_style_values"
+            app:defaultValue="bottom"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            app:key="grid_columns"
+            app:title="Grid columns"
+            app:summary="%s"
+            app:entries="@array/grid_columns_entries"
+            app:entryValues="@array/grid_columns_values"
+            app:defaultValue="2"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <!-- Notes list -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="Notes List">
+
+        <ListPreference
+            app:key="default_view_mode"
+            app:title="Default view"
+            app:summary="%s"
+            app:entries="@array/view_mode_entries"
+            app:entryValues="@array/view_mode_values"
+            app:defaultValue="grid"
+            app:useSimpleSummaryProvider="true" />
+
+        <ListPreference
+            app:key="default_sort_order"
+            app:title="Default sort order"
+            app:summary="%s"
+            app:entries="@array/sort_order_entries"
+            app:entryValues="@array/sort_order_values"
+            app:defaultValue="DATE_MODIFIED_DESC"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            app:key="pref_show_preview"
+            app:title="Show note preview"
+            app:summary="Display a snippet of the note content on cards"
+            app:defaultValue="true" />
+
+        <ListPreference
+            app:key="pref_preview_lines"
+            app:title="Preview lines"
+            app:summary="%s"
+            app:entries="@array/preview_lines_entries"
+            app:entryValues="@array/preview_lines_values"
+            app:defaultValue="2"
+            app:useSimpleSummaryProvider="true"
+            app:dependency="pref_show_preview" />
+
+        <SwitchPreferenceCompat
+            app:key="pref_show_date"
+            app:title="Show note date"
+            app:summary="Display last-modified timestamp on cards"
+            app:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            app:key="pref_compact_cards"
+            app:title="Compact cards"
+            app:summary="Reduce card height for a denser list"
+            app:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <!-- Editor -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="Editor">
+
+        <SwitchPreferenceCompat
+            app:key="pref_show_word_count"
+            app:title="Show word count"
+            app:summary="Live word and character counter while editing"
+            app:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            app:key="pref_toolbar_expanded"
+            app:title="Formatting toolbar expanded"
+            app:summary="Show the formatting bar when opening a note"
+            app:defaultValue="true" />
+
+        <ListPreference
+            app:key="pref_editor_font_size"
+            app:title="Editor font size"
+            app:summary="%s"
+            app:entries="@array/editor_font_size_entries"
+            app:entryValues="@array/editor_font_size_values"
+            app:defaultValue="18"
+            app:useSimpleSummaryProvider="true" />
+
         <SwitchPreferenceCompat
             app:key="pref_autofocus_new_note"
             app:title="Auto-focus on new note"
+            app:summary="Open keyboard automatically when creating a note"
             app:defaultValue="true" />
 
         <SwitchPreferenceCompat
             app:key="pref_autofocus_open_note"
             app:title="Auto-focus when opening notes"
+            app:summary="Open keyboard when tapping an existing note"
             app:defaultValue="false" />
 
         <ListPreference
@@ -25,15 +125,119 @@
             app:entries="@array/language_entries"
             app:entryValues="@array/language_values"
             app:defaultValue="en"
-            app:useSimpleSummaryProvider="true"/>
+            app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="Security">
+    <!-- Security -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="Security">
 
         <Preference
             app:key="master_password"
-            app:title="Set Master Password" />
+            app:title="Master Password"
+            app:summary="Protect your secure notes" />
+
+        <SwitchPreferenceCompat
+            app:key="biometric_unlock"
+            app:title="Biometric unlock"
+            app:summary="Requires master password and enrolled biometrics"
+            app:defaultValue="false" />
+
+        <ListPreference
+            app:key="auto_lock_timeout"
+            app:title="Auto-lock after"
+            app:summary="%s"
+            app:entries="@array/auto_lock_entries"
+            app:entryValues="@array/auto_lock_values"
+            app:defaultValue="5"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <!-- Dictation (Voice to text) -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="Dictation (Voice to Text)">
+
+        <EditTextPreference
+            app:key="pref_openai_api_key"
+            app:title="OpenAI API Key"
+            app:summary="Required for Whisper voice dictation"
+            app:useSimpleSummaryProvider="false" />
+
+        <Preference
+            app:key="action_openai_key_help"
+            app:title="How to get an API key"
+            app:summary="Tap to open platform.openai.com/api-keys" />
+
+    </PreferenceCategory>
+
+    <!-- Quick capture -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="Quick Capture">
+
+        <SwitchPreferenceCompat
+            app:key="pref_quick_timestamp"
+            app:title="Auto-insert timestamp"
+            app:summary="Add date &amp; time at the start of every new note"
+            app:defaultValue="true" />
+
+        <ListPreference
+            app:key="pref_quick_timestamp_format"
+            app:title="Timestamp format"
+            app:entries="@array/timestamp_format_entries"
+            app:entryValues="@array/timestamp_format_values"
+            app:defaultValue="datetime"
+            app:useSimpleSummaryProvider="true"
+            app:dependency="pref_quick_timestamp" />
+
+        <SwitchPreferenceCompat
+            app:key="pref_quick_gps"
+            app:title="Auto-insert GPS location"
+            app:summary="Add coordinates at the start of every new note"
+            app:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            app:key="pref_quick_gps_editor_btn"
+            app:title="Show GPS button in editor"
+            app:summary="Insert current location at cursor while editing"
+            app:defaultValue="true" />
+
+        <ListPreference
+            app:key="pref_gps_insert_format"
+            app:title="GPS coordinate format"
+            app:summary="%s"
+            app:entries="@array/gps_format_entries"
+            app:entryValues="@array/gps_format_values"
+            app:defaultValue="decimal"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <!-- Data -->
+    <PreferenceCategory app:iconSpaceReserved="false" app:title="Data">
+
+        <Preference
+            app:key="action_clear_recycle_bin"
+            app:title="Empty Recycle Bin"
+            app:summary="Permanently delete all trashed notes" />
+
+        <Preference
+            app:key="action_export_mp3"
+            app:title="Export as MP3"
+            app:summary="Encrypted backup disguised as an audio file" />
+
+        <Preference
+            app:key="action_import_mp3"
+            app:title="Import from MP3"
+            app:summary="Restore notes from a SafestNotes .mp3 backup" />
+
+        <Preference
+            app:key="pref_cover_audio"
+            app:title="Cover audio"
+            app:summary="Audio that plays when someone opens the MP3" />
+
+        <Preference
+            app:key="action_about"
+            app:title="About SafestNotes"
+            app:summary="Version info" />
 
     </PreferenceCategory>
 

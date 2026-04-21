@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tezas.safestnotes.data.Folder
 import com.tezas.safestnotes.data.Note
+import com.tezas.safestnotes.data.NoteRevision
 import com.tezas.safestnotes.data.NotesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -55,18 +58,20 @@ class NotesViewModel(private val repository: NotesRepository) : ViewModel() {
         val itemsToShow: List<Any> = if (state.currentFolderId == null) {
             val subFolders = if (state.showFavoritesOnly) emptyList() else folders.sortedBy { it.name }
             val rootNotes = favoriteNotes.filter { it.folderId == null }
-            val sortedNotes = sortNotes(rootNotes, state.sortOrder)
+            val sortedNotes = pinFirst(sortNotes(rootNotes, state.sortOrder))
             subFolders + sortedNotes
         } else {
             val notesInFolder = favoriteNotes.filter { it.folderId == state.currentFolderId }
-            sortNotes(notesInFolder, state.sortOrder)
+            pinFirst(sortNotes(notesInFolder, state.sortOrder))
         }
 
         if (state.searchQuery.isBlank()) {
             itemsToShow
         } else {
             itemsToShow.filter {
-                (it is Note && (it.title.contains(state.searchQuery, true) || it.content.contains(state.searchQuery, true))) ||
+                // Secure notes: search title only (content is AES-GCM ciphertext, never plaintext)
+                (it is Note && (it.title.contains(state.searchQuery, true) ||
+                    (!it.isSecure && it.content.contains(state.searchQuery, true)))) ||
                 (it is Folder && it.name.contains(state.searchQuery, true))
             }
         }
@@ -74,6 +79,9 @@ class NotesViewModel(private val repository: NotesRepository) : ViewModel() {
 
     val allNotes = repository.allNotes.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     val folders = repository.allFolders.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    /** Exposed so fragments (e.g. SecureVaultFragment) can combine with it directly. */
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     fun setSearchQuery(query: String) { _searchQuery.value = query }
     fun setShowDeleted(show: Boolean) { _showDeleted.value = show }
@@ -83,11 +91,37 @@ class NotesViewModel(private val repository: NotesRepository) : ViewModel() {
     fun toggleViewMode() { viewMode.value = if(viewMode.value == ViewMode.GRID) ViewMode.LIST else ViewMode.GRID }
     fun setViewMode(mode: ViewMode) { viewMode.value = mode }
 
+    fun togglePin(note: Note) { viewModelScope.launch { repository.update(note.copy(isPinned = !note.isPinned)) } }
+
     fun addNote(note: Note) { viewModelScope.launch { repository.insert(note) } }
     fun updateNote(note: Note) { viewModelScope.launch { repository.update(note) } }
-    fun deleteNote(note: Note) { viewModelScope.launch { repository.update(note.copy(isDeleted = true)) } }
-    fun restoreNote(note: Note) { viewModelScope.launch { repository.update(note.copy(isDeleted = false)) } }
+
+    /** Suspend versions — for callers that must await completion (e.g. the editor close flow). */
+    suspend fun addNoteAwait(note: Note): Long = repository.insert(note)
+    suspend fun updateNoteAwait(note: Note) = repository.update(note)
+    fun deleteNote(note: Note) {
+        viewModelScope.launch {
+            repository.update(note.copy(isDeleted = true, deletedAt = System.currentTimeMillis()))
+        }
+    }
+    fun restoreNote(note: Note) {
+        viewModelScope.launch {
+            repository.update(note.copy(isDeleted = false, deletedAt = null))
+        }
+    }
     fun deleteNotePermanently(note: Note) { viewModelScope.launch { repository.delete(note) } }
+
+    /**
+     * Hard-delete every note that has been in the bin longer than [retentionDays].
+     * Pass 0 to disable auto-purge ("Never"). Called on app launch.
+     */
+    fun purgeExpiredNotes(retentionDays: Int = 30) {
+        if (retentionDays <= 0) return
+        viewModelScope.launch {
+            val cutoff = System.currentTimeMillis() - retentionDays.toLong() * 24 * 60 * 60 * 1000
+            repository.purgeDeletedBefore(cutoff)
+        }
+    }
     fun addFolder(folder: Folder) { viewModelScope.launch { repository.insertFolder(folder) } }
     fun addFolderSafely(folder: Folder, onError: (String) -> Unit) {
         viewModelScope.launch {
@@ -101,7 +135,12 @@ class NotesViewModel(private val repository: NotesRepository) : ViewModel() {
     fun updateFolder(folder: Folder) { viewModelScope.launch { repository.updateFolder(folder) } }
     fun deleteFolderById(id: Int) { viewModelScope.launch { repository.deleteFolderById(id) } }
     fun deleteFolderWithContents(id: Int) { viewModelScope.launch { repository.deleteFolderWithContents(id) } }
-    fun deleteMultiple(items: List<Any>) { viewModelScope.launch { items.forEach { if (it is Note) { repository.update(it.copy(isDeleted = true)) } } } }
+    fun deleteMultiple(items: List<Any>) {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            items.forEach { if (it is Note) repository.update(it.copy(isDeleted = true, deletedAt = now)) }
+        }
+    }
     fun moveMultiple(items: List<Any>, folderId: Int) { viewModelScope.launch { items.forEach { if (it is Note) { repository.update(it.copy(folderId = folderId)) } } } }
 
     fun moveNotesToFolder(notes: List<Note>, folderId: Int?) {
@@ -168,6 +207,9 @@ class NotesViewModel(private val repository: NotesRepository) : ViewModel() {
 
     suspend fun getNoteById(id: Int): Note? = repository.getNoteById(id)
 
+    suspend fun saveRevision(note: Note) = repository.saveRevision(note)
+    suspend fun getRevisionsForNote(noteId: Int): List<NoteRevision> = repository.getRevisionsForNote(noteId)
+
     private fun sortNotes(notes: List<Note>, sortOrder: SortOrder): List<Note> {
         val plainTextLength: (Note) -> Int = { note ->
             note.content.replace(Regex("<[^>]*>"), "").length
@@ -191,6 +233,10 @@ class NotesViewModel(private val repository: NotesRepository) : ViewModel() {
             SortOrder.DATE_MODIFIED_DESC -> notes.sortedByDescending { it.timestamp }
         }
     }
+
+    /** Pinned notes float to the top, preserving relative order within each group. */
+    private fun pinFirst(notes: List<Note>): List<Note> =
+        notes.filter { it.isPinned } + notes.filter { !it.isPinned }
 
     private suspend fun getOrCreateSecureFolder(): Folder {
         val existing = repository.getFolderByName("Secure")

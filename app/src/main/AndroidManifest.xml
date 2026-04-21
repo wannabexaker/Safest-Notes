@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:name=".ui.SafestNotesApp"
@@ -28,8 +32,41 @@
         </activity>
         <activity
             android:name=".ui.AddEditNoteActivity"
+            android:theme="@style/Theme.SafestNotes.NoteEditor"
             android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ui.MasterPasswordActivity" />
+
+        <!-- Quick Capture: widget trampoline activity (no window chrome) -->
+        <activity
+            android:name=".ui.QuickCaptureActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity="" />
+
+        <!-- Quick Capture: home-screen widget -->
+        <receiver
+            android:name=".widget.QuickCaptureWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_capture_widget_info" />
+        </receiver>
+
+        <!-- Quick Capture: notification-shade tile (Android 7+) -->
+        <service
+            android:name=".widget.QuickCaptureTile"
+            android:exported="true"
+            android:label="@string/quick_capture_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

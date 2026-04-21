@@ -4,17 +4,119 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <!-- Language Preference -->
+    <!-- Language -->
     <string-array name="language_entries">
         <item>English</item>
         <item>Greek</item>
     </string-array>
-
     <string-array name="language_values">
         <item>en</item>
         <item>el</item>
     </string-array>
 
+    <!-- Navigation style -->
+    <string-array name="nav_style_entries">
+        <item>Bottom Tabs</item>
+        <item>Side Drawer (classic)</item>
+    </string-array>
+    <string-array name="nav_style_values">
+        <item>bottom</item>
+        <item>drawer</item>
+    </string-array>
+
+    <!-- Grid columns -->
+    <string-array name="grid_columns_entries">
+        <item>2 columns</item>
+        <item>3 columns</item>
+    </string-array>
+    <string-array name="grid_columns_values">
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <!-- Default view mode -->
+    <string-array name="view_mode_entries">
+        <item>Grid</item>
+        <item>List</item>
+    </string-array>
+    <string-array name="view_mode_values">
+        <item>grid</item>
+        <item>list</item>
+    </string-array>
+
+    <!-- Default sort order -->
+    <string-array name="sort_order_entries">
+        <item>Last modified</item>
+        <item>Oldest modified</item>
+        <item>Date created (newest)</item>
+        <item>Date created (oldest)</item>
+        <item>Title A–Z</item>
+        <item>Title Z–A</item>
+        <item>Size (largest)</item>
+        <item>Size (smallest)</item>
+    </string-array>
+    <string-array name="sort_order_values">
+        <item>DATE_MODIFIED_DESC</item>
+        <item>DATE_MODIFIED_ASC</item>
+        <item>DATE_CREATED_DESC</item>
+        <item>DATE_CREATED_ASC</item>
+        <item>TITLE_ASC</item>
+        <item>TITLE_DESC</item>
+        <item>SIZE_KB_DESC</item>
+        <item>SIZE_KB_ASC</item>
+    </string-array>
+
+    <!-- Preview lines -->
+    <string-array name="preview_lines_entries">
+        <item>1 line</item>
+        <item>2 lines</item>
+        <item>3 lines</item>
+    </string-array>
+    <string-array name="preview_lines_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <!-- Editor font size (Medium = former Large = 18sp, now the default) -->
+    <string-array name="editor_font_size_entries">
+        <item>Tiny (10sp)</item>
+        <item>Small (13sp)</item>
+        <item>Medium (18sp)</item>
+        <item>Large (22sp)</item>
+        <item>Extra Large (26sp)</item>
+        <item>Huge (30sp)</item>
+    </string-array>
+    <string-array name="editor_font_size_values">
+        <item>10</item>
+        <item>13</item>
+        <item>18</item>
+        <item>22</item>
+        <item>26</item>
+        <item>30</item>
+    </string-array>
+
+    <!-- Auto-lock timeout -->
+    <string-array name="auto_lock_entries">
+        <item>Immediately</item>
+        <item>1 minute</item>
+        <item>5 minutes</item>
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="auto_lock_values">
+        <item>0</item>
+        <item>1</item>
+        <item>5</item>
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>-1</item>
+    </string-array>
+
+    <!-- Misc -->
     <string name="action_favorite">Favorite</string>
     <string name="delete">Delete</string>
     <string name="select_all">Select all</string>
@@ -27,4 +129,31 @@
     <string name="view_mode_list">View: List</string>
     <string name="view_mode_grid">View: Grid</string>
     <string name="folder_label_all">All notes</string>
+
+    <!-- Quick Capture -->
+    <string name="quick_capture_label">Quick Capture</string>
+    <string name="quick_note_label">New Note</string>
+    <string name="quick_dictate_label">Dictate</string>
+    <!-- GPS coordinate format -->
+    <string-array name="gps_format_entries">
+        <item>Decimal degrees (37.97512°, 23.72563°)</item>
+        <item>DMS (37°58\'30\"N, 23°43\'32\"E)</item>
+        <item>Street address (reverse geocode)</item>
+    </string-array>
+    <string-array name="gps_format_values">
+        <item>decimal</item>
+        <item>dms</item>
+        <item>address</item>
+    </string-array>
+
+    <string-array name="timestamp_format_entries">
+        <item>Date &amp; Time</item>
+        <item>Date only</item>
+        <item>Time only</item>
+    </string-array>
+    <string-array name="timestamp_format_values">
+        <item>datetime</item>
+        <item>date</item>
+        <item>time</item>
+    </string-array>
 </resources>

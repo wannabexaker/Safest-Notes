@@ -6,15 +6,19 @@ package com.tezas.safestnotes.ui
 import com.tezas.safestnotes.R
 
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.view.HapticFeedbackConstants
 import android.os.Bundle
 import android.text.Html
 import android.text.format.DateFormat
 import android.view.*
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -26,11 +30,16 @@ import android.view.ViewConfiguration
 import androidx.appcompat.widget.PopupMenu
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.tezas.safestnotes.adapter.NotesAdapter
 import com.tezas.safestnotes.data.Folder
 import com.tezas.safestnotes.data.Note
 import com.tezas.safestnotes.viewmodel.NotesViewModel
+import androidx.preference.PreferenceManager
+import com.tezas.safestnotes.security.SecurityManager
+import com.tezas.safestnotes.viewmodel.SortOrder
 import com.tezas.safestnotes.viewmodel.ViewMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -43,7 +52,10 @@ open class NotesFragment : Fragment() {
     private var allNotes: List<Note> = emptyList()
     private var folderNoteCounts: Map<Int, Int> = emptyMap()
     private lateinit var recyclerView: RecyclerView
-    private var actionMode: androidx.appcompat.view.ActionMode? = null
+    private var isSelectionMode = false
+    private lateinit var bottomSelectionBar: MaterialCardView
+    private lateinit var selectionCountLabel: TextView
+    private lateinit var emptyState: View
     private var backCallback: OnBackPressedCallback? = null
     private var longPressTarget: RecyclerView.ViewHolder? = null
     private var longPressItem: Any? = null
@@ -67,19 +79,36 @@ open class NotesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         recyclerView = view.findViewById(R.id.recyclerView)
+        bottomSelectionBar = view.findViewById(R.id.bottom_selection_bar)
+        selectionCountLabel = view.findViewById(R.id.selection_count_label)
+        emptyState = view.findViewById(R.id.empty_state)
         touchSlop = ViewConfiguration.get(requireContext()).scaledTouchSlop
+        applyUserPreferences()
         setupRecyclerView()
         observeViewModel()
         setupFabs(view)
+        setupBottomSelectionBar(view)
         setupDragAndSwipe()
         setupBackHandler()
         viewModel.setCurrentFolder(getFolderIdArg())
     }
 
+    private fun applyUserPreferences() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        // Default view mode
+        val viewModePref = prefs.getString("default_view_mode", "grid")
+        viewModel.setViewMode(if (viewModePref == "list") ViewMode.LIST else ViewMode.GRID)
+        // Default sort order
+        val sortPref = prefs.getString("default_sort_order", "DATE_MODIFIED_DESC")
+        val sortOrder = runCatching { SortOrder.valueOf(sortPref ?: "DATE_MODIFIED_DESC") }
+            .getOrDefault(SortOrder.DATE_MODIFIED_DESC)
+        viewModel.setSortOrder(sortOrder)
+    }
+
     private fun setupRecyclerView() {
         notesAdapter = NotesAdapter(itemsList, folderNoteCounts,
             onNoteClick = { note, position ->
-                if (actionMode != null) {
+                if (isSelectionMode) {
                     toggleSelection(note, position)
                 } else {
                     val intent = Intent(requireContext(), AddEditNoteActivity::class.java)
@@ -92,10 +121,10 @@ open class NotesFragment : Fragment() {
                 }
             },
             onFolderClick = { folder ->
-                if (actionMode != null) {
+                if (isSelectionMode) {
                     toggleSelection(folder, -1)
                 } else {
-                    (activity as? MainActivity)?.openFolder(folder)
+                    openFolderWithSecureCheck(folder)
                 }
             },
             onLongPress = { _, _ -> },
@@ -111,119 +140,54 @@ open class NotesFragment : Fragment() {
         notesAdapter.toggleSelection(item)
         val count = notesAdapter.selectedItems.size
         if (count == 0) {
-            actionMode?.finish()
+            exitSelectionMode()
         } else {
-            actionMode?.title = "$count selected"
-            actionMode?.invalidate()
+            selectionCountLabel.text = "$count selected"
         }
         updateBackHandlerEnabled()
     }
 
-    private val actionModeCallback = object : androidx.appcompat.view.ActionMode.Callback {
-        override fun onCreateActionMode(mode: androidx.appcompat.view.ActionMode, menu: Menu): Boolean {
-            mode.menuInflater.inflate(R.menu.contextual_action_menu, menu)
-            return true
+    private fun setupBottomSelectionBar(view: View) {
+        view.findViewById<View>(R.id.btn_exit_selection).setOnClickListener {
+            exitSelectionMode()
         }
-
-        override fun onPrepareActionMode(mode: androidx.appcompat.view.ActionMode, menu: Menu): Boolean {
-            val hasFolders = notesAdapter.selectedItems.any { it is Folder }
-            menu.findItem(R.id.action_change_folder_color)?.isVisible = hasFolders
-            applyDisabledRedTitle(menu.findItem(R.id.action_move_secure), "Move to Secure Folder")
-            applyDisabledRedTitle(menu.findItem(R.id.action_copy_secure), "Copy to Secure Folder")
-            return false
-        }
-
-        override fun onActionItemClicked(mode: androidx.appcompat.view.ActionMode, item: MenuItem): Boolean {
+        view.findViewById<View>(R.id.btn_selection_star).setOnClickListener {
             val selectedNotes = notesAdapter.selectedItems.filterIsInstance<Note>()
-            val selectedFolders = notesAdapter.selectedItems.filterIsInstance<Folder>()
-            return when (item.itemId) {
-                R.id.action_details -> {
-                    showDetailsDialog()
-                    true
-                }
-                R.id.action_duplicate -> {
-                    if (selectedNotes.isNotEmpty()) {
-                        viewModel.duplicateNotes(selectedNotes)
-                        mode.finish()
-                    } else {
-                        showNoNotesSelectedMessage()
-                    }
-                    true
-                }
-                R.id.action_delete_contextual -> {
-                    if (selectedNotes.isNotEmpty()) {
-                        viewModel.deleteMultiple(selectedNotes)
-                        mode.finish()
-                    } else {
-                        showNoNotesSelectedMessage()
-                    }
-                    true
-                }
-                R.id.action_move -> {
-                    if (selectedNotes.isNotEmpty()) {
-                        showMoveDialog(isCopy = false, notes = selectedNotes, onComplete = { folderId ->
-                            notesAdapter.setRecentlyMovedFolder(folderId)
-                            mode.finish()
-                        })
-                    } else {
-                        showNoNotesSelectedMessage()
-                    }
-                    true
-                }
-                R.id.action_copy -> {
-                    if (selectedNotes.isNotEmpty()) {
-                        showMoveDialog(isCopy = true, notes = selectedNotes, onComplete = { folderId ->
-                            notesAdapter.setRecentlyMovedFolder(folderId)
-                            mode.finish()
-                        })
-                    } else {
-                        showNoNotesSelectedMessage()
-                    }
-                    true
-                }
-                R.id.action_move_secure -> {
-                    if (selectedNotes.isNotEmpty()) {
-                        viewModel.moveToSecureFolder(selectedNotes)
-                        mode.finish()
-                    } else {
-                        showNoNotesSelectedMessage()
-                    }
-                    true
-                }
-                R.id.action_copy_secure -> {
-                    if (selectedNotes.isNotEmpty()) {
-                        viewModel.copyToSecureFolder(selectedNotes)
-                        mode.finish()
-                    } else {
-                        showNoNotesSelectedMessage()
-                    }
-                    true
-                }
-                R.id.action_share -> {
-                    if (selectedNotes.isNotEmpty()) {
-                        shareSelectedNotes(selectedNotes)
-                        mode.finish()
-                    } else {
-                        showNoNotesSelectedMessage()
-                    }
-                    true
-                }
-                R.id.action_change_folder_color -> {
-                    if (selectedFolders.isNotEmpty()) {
-                        showFolderColorDialog(selectedFolders) { mode.finish() }
-                    } else {
-                        showNoFoldersSelectedMessage()
-                    }
-                    true
-                }
-                else -> false
+            if (selectedNotes.isNotEmpty()) {
+                val allFavorite = selectedNotes.all { it.isFavorite }
+                selectedNotes.forEach { viewModel.updateNote(it.copy(isFavorite = !allFavorite)) }
+                exitSelectionMode()
             }
         }
-
-        override fun onDestroyActionMode(mode: androidx.appcompat.view.ActionMode) {
-            notesAdapter.clearSelections()
-            actionMode = null
-            updateBackHandlerEnabled()
+        view.findViewById<View>(R.id.btn_selection_share).setOnClickListener {
+            val selectedNotes = notesAdapter.selectedItems.filterIsInstance<Note>()
+            if (selectedNotes.isNotEmpty()) {
+                shareSelectedNotes(selectedNotes)
+                exitSelectionMode()
+            } else showNoNotesSelectedMessage()
+        }
+        view.findViewById<View>(R.id.btn_selection_move).setOnClickListener {
+            val selectedNotes = notesAdapter.selectedItems.filterIsInstance<Note>()
+            if (selectedNotes.isNotEmpty()) {
+                showMoveDialog(isCopy = false, notes = selectedNotes, onComplete = { folderId ->
+                    notesAdapter.setRecentlyMovedFolder(folderId)
+                    exitSelectionMode()
+                })
+            } else showNoNotesSelectedMessage()
+        }
+        view.findViewById<View>(R.id.btn_selection_duplicate).setOnClickListener {
+            val selectedNotes = notesAdapter.selectedItems.filterIsInstance<Note>()
+            if (selectedNotes.isNotEmpty()) {
+                viewModel.duplicateNotes(selectedNotes)
+                exitSelectionMode()
+            } else showNoNotesSelectedMessage()
+        }
+        view.findViewById<View>(R.id.btn_selection_delete).setOnClickListener {
+            val selectedNotes = notesAdapter.selectedItems.filterIsInstance<Note>()
+            if (selectedNotes.isNotEmpty()) {
+                viewModel.deleteMultiple(selectedNotes)
+                exitSelectionMode()
+            } else showNoNotesSelectedMessage()
         }
     }
 
@@ -272,17 +236,20 @@ open class NotesFragment : Fragment() {
             viewModel.items.collect { items ->
                 itemsList = items
                 notesAdapter.updateData(items)
+                emptyState.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
             }
         }
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.viewMode.collect { viewMode ->
-                val layoutManager = GridLayoutManager(context, 2)
+                val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                val cols = prefs.getString("grid_columns", "2")?.toIntOrNull() ?: 2
+                val layoutManager = GridLayoutManager(context, cols)
                 layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                     override fun getSpanSize(position: Int): Int {
                         if (position < itemsList.size) {
                             return when (notesAdapter.getItemViewType(position)) {
                                 NotesAdapter.TYPE_FOLDER -> 1
-                                NotesAdapter.TYPE_NOTE -> if (viewMode == ViewMode.LIST) 2 else 1
+                                NotesAdapter.TYPE_NOTE -> if (viewMode == ViewMode.LIST) cols else 1
                                 else -> 1
                             }
                         }
@@ -300,9 +267,14 @@ open class NotesFragment : Fragment() {
         }
         view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             val intent = Intent(requireContext(), AddEditNoteActivity::class.java)
-            getFolderIdArg()?.let {
+            val folderId = getFolderIdArg()
+            folderId?.let {
                 intent.putExtra(AddEditNoteActivity.EXTRA_FOLDER_ID, it)
                 intent.putExtra(AddEditNoteActivity.EXTRA_FROM_FOLDER_CONTEXT, true)
+                val folder = viewModel.folders.value.firstOrNull { f -> f.id == it }
+                if (folder?.isSecure == true) {
+                    intent.putExtra(AddEditNoteActivity.EXTRA_IS_SECURE_FOLDER, true)
+                }
             }
             startActivity(intent)
         }
@@ -360,9 +332,92 @@ open class NotesFragment : Fragment() {
                 if (position != RecyclerView.NO_POSITION) {
                     val item = itemsList[position]
                     if (item is Note) {
-                        viewModel.deleteNote(item)
+                        viewHolder.itemView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        if (direction == ItemTouchHelper.LEFT) {
+                            viewModel.deleteNote(item)
+                            Snackbar.make(recyclerView, "Note moved to Recycle Bin", Snackbar.LENGTH_LONG)
+                                .setAction("Undo") { viewModel.restoreNote(item) }
+                                .setActionTextColor(ContextCompat.getColor(requireContext(), R.color.purple_light))
+                                .show()
+                        } else {
+                            val nowFav = !item.isFavorite
+                            viewModel.updateNote(item.copy(isFavorite = nowFav))
+                            val msg = if (nowFav) "Added to favorites ★" else "Removed from favorites"
+                            Snackbar.make(recyclerView, msg, Snackbar.LENGTH_SHORT).show()
+                            notesAdapter.notifyItemChanged(position)
+                        }
                     }
                 }
+            }
+
+            override fun onChildDraw(
+                c: Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float, dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE
+                    && viewHolder.itemViewType == NotesAdapter.TYPE_NOTE) {
+
+                    val iv   = viewHolder.itemView
+                    val ctx  = requireContext()
+                    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+                    val swipeRatio = (kotlin.math.abs(dX) / iv.width).coerceIn(0f, 1f)
+                    // Background corners follow card corners (14dp)
+                    val cornerRadius = 14f * resources.displayMetrics.density
+
+                    if (dX < 0) {
+                        // LEFT → delete (red)
+                        paint.color = ContextCompat.getColor(ctx, R.color.danger_red)
+                        // Fade bg from 60% → 100% alpha as swipe progresses
+                        paint.alpha = (153 + (102 * swipeRatio)).toInt().coerceIn(0, 255)
+                        val rect = android.graphics.RectF(
+                            iv.right + dX, iv.top.toFloat(),
+                            iv.right.toFloat(), iv.bottom.toFloat())
+                        c.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
+
+                        // Trash icon — grows from 0 to 26dp as swipe progresses
+                        val iconSize = ((26 * swipeRatio) * resources.displayMetrics.density)
+                            .toInt().coerceAtLeast(0)
+                        if (iconSize > 8) {
+                            ContextCompat.getDrawable(ctx, R.drawable.ic_delete)?.let { icon ->
+                                icon.setTint(android.graphics.Color.WHITE)
+                                val cx = (iv.right + dX / 2).toInt()
+                                val cy = (iv.top + iv.height / 2)
+                                icon.setBounds(cx - iconSize/2, cy - iconSize/2,
+                                               cx + iconSize/2, cy + iconSize/2)
+                                icon.alpha = (255 * swipeRatio).toInt().coerceIn(0, 255)
+                                icon.draw(c)
+                            }
+                        }
+
+                    } else if (dX > 0) {
+                        // RIGHT → favorite (gold)
+                        paint.color = ContextCompat.getColor(ctx, R.color.favorite_gold)
+                        paint.alpha = (153 + (102 * swipeRatio)).toInt().coerceIn(0, 255)
+                        val rect = android.graphics.RectF(
+                            iv.left.toFloat(), iv.top.toFloat(),
+                            iv.left + dX, iv.bottom.toFloat())
+                        c.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
+
+                        val iconSize = ((26 * swipeRatio) * resources.displayMetrics.density)
+                            .toInt().coerceAtLeast(0)
+                        if (iconSize > 8) {
+                            ContextCompat.getDrawable(ctx, R.drawable.ic_star)?.let { icon ->
+                                icon.setTint(android.graphics.Color.WHITE)
+                                val cx = (iv.left + dX / 2).toInt()
+                                val cy = (iv.top + iv.height / 2)
+                                icon.setBounds(cx - iconSize/2, cy - iconSize/2,
+                                               cx + iconSize/2, cy + iconSize/2)
+                                icon.alpha = (255 * swipeRatio).toInt().coerceIn(0, 255)
+                                icon.draw(c)
+                            }
+                        }
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
             }
 
             override fun canDropOver(
@@ -420,7 +475,7 @@ open class NotesFragment : Fragment() {
     private fun setupGestureHandling() {
         gestureDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
             override fun onLongPress(e: MotionEvent) {
-                if (actionMode != null) return
+                if (isSelectionMode) return
                 val child = recyclerView.findChildViewUnder(e.x, e.y) ?: return
                 val holder = recyclerView.getChildViewHolder(child)
                 val position = holder.adapterPosition
@@ -462,6 +517,7 @@ open class NotesFragment : Fragment() {
                         }
                     }
                     resetLongPressState()
+                    return true // consume event — prevents click from firing alongside context menu
                 }
                 if (e.action == MotionEvent.ACTION_CANCEL) {
                     resetLongPressState()
@@ -482,9 +538,6 @@ open class NotesFragment : Fragment() {
     }
 
     private fun startDragFromHandle(holder: RecyclerView.ViewHolder) {
-        if (actionMode != null) {
-            // Selection mode should not suppress handle-based drag gestures.
-        }
         resetLongPressState()
         dragStarted = true
         itemTouchHelper.startDrag(holder)
@@ -511,8 +564,8 @@ open class NotesFragment : Fragment() {
     private fun setupBackHandler() {
         backCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                if (actionMode != null) {
-                    actionMode?.finish()
+                if (isSelectionMode) {
+                    exitSelectionMode()
                     return
                 }
                 if (getFolderIdArg() != null) {
@@ -528,28 +581,51 @@ open class NotesFragment : Fragment() {
     }
 
     private fun updateBackHandlerEnabled() {
-        backCallback?.isEnabled = actionMode != null || getFolderIdArg() != null
+        backCallback?.isEnabled = isSelectionMode || getFolderIdArg() != null
     }
 
     fun enterSelectionMode() {
-        if (actionMode == null) {
-            actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(actionModeCallback)
+        if (!isSelectionMode) {
+            isSelectionMode = true
+            bottomSelectionBar.visibility = View.VISIBLE
+            selectionCountLabel.text = "0 selected"
+            view?.findViewById<FloatingActionButton>(R.id.fab)?.hide()
+            view?.findViewById<FloatingActionButton>(R.id.fab_new_folder)?.hide()
             updateBackHandlerEnabled()
         }
+    }
+
+    fun exitSelectionMode() {
+        isSelectionMode = false
+        notesAdapter.clearSelections()
+        bottomSelectionBar.visibility = View.GONE
+        view?.findViewById<FloatingActionButton>(R.id.fab)?.show()
+        view?.findViewById<FloatingActionButton>(R.id.fab_new_folder)?.show()
+        updateBackHandlerEnabled()
     }
 
     private fun showNoteContextMenu(anchor: View, note: Note) {
         val menu = PopupMenu(requireContext(), anchor)
         menu.menuInflater.inflate(R.menu.note_context_menu, menu.menu)
         val favoriteItem = menu.menu.findItem(R.id.action_note_favorite)
-        favoriteItem.title = if (note.isFavorite) "Remove Favorite" else "Add to Favorite"
-
-        val saveFileItem = menu.menu.findItem(R.id.action_note_save_file)
-        applyDisabledRedTitle(saveFileItem, "Save as File")
-        applyDisabledRedTitle(menu.menu.findItem(R.id.action_note_move_secure), "Move to Secure Folder")
+        favoriteItem.title = if (note.isFavorite) "Remove Favorite" else "Add to Favorites"
+        menu.menu.findItem(R.id.action_note_pin)?.title = if (note.isPinned) "Unpin" else "Pin to top"
 
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.action_note_select -> {
+                    enterSelectionMode()
+                    notesAdapter.toggleSelection(note)
+                    selectionCountLabel.text = "1 selected"
+                    updateBackHandlerEnabled()
+                    true
+                }
+                R.id.action_note_pin -> {
+                    viewModel.togglePin(note)
+                    val msg = if (note.isPinned) "Unpinned" else "Pinned to top 📌"
+                    Snackbar.make(recyclerView, msg, Snackbar.LENGTH_SHORT).show()
+                    true
+                }
                 R.id.action_note_details -> {
                     showNoteDetailsDialog(note)
                     true
@@ -564,12 +640,6 @@ open class NotesFragment : Fragment() {
                     })
                     true
                 }
-                R.id.action_note_copy -> {
-                    showMoveDialog(isCopy = true, notes = listOf(note), onComplete = { folderId ->
-                        notesAdapter.setRecentlyMovedFolder(folderId)
-                    })
-                    true
-                }
                 R.id.action_note_duplicate -> {
                     viewModel.duplicateNotes(listOf(note))
                     true
@@ -579,6 +649,20 @@ open class NotesFragment : Fragment() {
                     true
                 }
                 R.id.action_note_move_secure -> {
+                    val sm = SecurityManager.get()
+                    if (!sm.isMasterPasswordSet()) {
+                        Toast.makeText(requireContext(), "Set up a master password in Settings first", Toast.LENGTH_SHORT).show()
+                    } else if (!sm.isUnlocked()) {
+                        UnlockDialog.showWithBiometricFirst(
+                            activity = requireActivity() as androidx.fragment.app.FragmentActivity,
+                            securityManager = sm,
+                            onUnlocked = { viewModel.moveToSecureFolder(listOf(note)) },
+                            onCancel = {}
+                        )
+                    } else {
+                        viewModel.moveToSecureFolder(listOf(note))
+                        Snackbar.make(recyclerView, "Moved to Secure Folder 🔒", Snackbar.LENGTH_SHORT).show()
+                    }
                     true
                 }
                 R.id.action_note_delete -> {
@@ -594,8 +678,8 @@ open class NotesFragment : Fragment() {
     private fun showFolderContextMenu(anchor: View, folder: Folder) {
         val menu = PopupMenu(requireContext(), anchor)
         menu.menuInflater.inflate(R.menu.drawer_folder_context_menu, menu.menu)
-        val reorderItem = menu.menu.findItem(R.id.action_reorder_folder)
-        applyDisabledRedTitle(reorderItem, "Drag reorder")
+        val secureItem = menu.menu.findItem(R.id.action_toggle_secure_folder)
+        secureItem?.title = if (folder.isSecure) "Remove folder security" else "Make secure folder"
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_create_subfolder -> {
@@ -614,10 +698,93 @@ open class NotesFragment : Fragment() {
                     showSingleFolderColorDialog(folder)
                     true
                 }
+                R.id.action_toggle_secure_folder -> {
+                    toggleFolderSecurity(folder)
+                    true
+                }
                 else -> false
             }
         }
         menu.show()
+    }
+
+    private fun openFolderWithSecureCheck(folder: Folder) {
+        val sm = SecurityManager.get()
+        if (folder.isSecure && sm.isMasterPasswordSet() && !sm.isUnlocked()) {
+            UnlockDialog.showWithBiometricFirst(
+                activity = requireActivity() as androidx.fragment.app.FragmentActivity,
+                securityManager = sm,
+                onUnlocked = { (activity as? MainActivity)?.openFolder(folder) },
+                onCancel = { /* stay on current screen */ }
+            )
+        } else {
+            (activity as? MainActivity)?.openFolder(folder)
+        }
+    }
+
+    private fun toggleFolderSecurity(folder: Folder) {
+        val sm = SecurityManager.get()
+        if (!sm.isMasterPasswordSet()) {
+            Toast.makeText(requireContext(), "Set up a master password in Settings first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (folder.isSecure) {
+            // Remove security — require unlock first
+            if (!sm.isUnlocked()) {
+                UnlockDialog.showWithBiometricFirst(
+                    activity = requireActivity() as androidx.fragment.app.FragmentActivity,
+                    securityManager = sm,
+                    onUnlocked = { doRemoveFolderSecurity(folder) },
+                    onCancel = {}
+                )
+            } else {
+                doRemoveFolderSecurity(folder)
+            }
+        } else {
+            // Make secure — require unlock first
+            if (!sm.isUnlocked()) {
+                UnlockDialog.showWithBiometricFirst(
+                    activity = requireActivity() as androidx.fragment.app.FragmentActivity,
+                    securityManager = sm,
+                    onUnlocked = { doMakeFolderSecure(folder) },
+                    onCancel = {}
+                )
+            } else {
+                doMakeFolderSecure(folder)
+            }
+        }
+    }
+
+    private fun doMakeFolderSecure(folder: Folder) {
+        viewModel.updateFolder(folder.copy(isSecure = true))
+        // Encrypt all notes in this folder
+        lifecycleScope.launch {
+            val sm = SecurityManager.get()
+            val notes = viewModel.allNotes.value.filter { it.folderId == folder.id && !it.isSecure }
+            notes.forEach { note ->
+                try {
+                    val (ciphertext, meta) = sm.encryptNote(note.content)
+                    viewModel.updateNote(note.copy(content = ciphertext, secureMetadata = meta, isSecure = true))
+                } catch (_: Exception) { /* skip note if encryption fails */ }
+            }
+        }
+        Toast.makeText(requireContext(), "Folder is now secure", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun doRemoveFolderSecurity(folder: Folder) {
+        viewModel.updateFolder(folder.copy(isSecure = false))
+        // Decrypt all notes in this folder
+        lifecycleScope.launch {
+            val sm = SecurityManager.get()
+            val notes = viewModel.allNotes.value.filter { it.folderId == folder.id && it.isSecure }
+            notes.forEach { note ->
+                try {
+                    val plaintext = sm.decryptNote(note.content, note.secureMetadata ?: return@forEach)
+                    viewModel.updateNote(note.copy(content = plaintext, secureMetadata = null, isSecure = false))
+                } catch (_: Exception) { /* skip if decrypt fails */ }
+            }
+        }
+        Toast.makeText(requireContext(), "Folder security removed", Toast.LENGTH_SHORT).show()
     }
 
     private fun showNoteDetailsDialog(note: Note) {

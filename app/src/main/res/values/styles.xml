@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Formatting toolbar icon button -->
+    <style name="ToolbarBtn">
+        <item name="android:layout_width">42dp</item>
+        <item name="android:layout_height">44dp</item>
+        <item name="android:padding">9dp</item>
+        <item name="android:scaleType">center</item>
+        <item name="android:tint">@color/purple_light</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+    </style>
+
+    <!-- Formatting toolbar H1/H2/H3 text button -->
+    <style name="ToolbarHeadingBtn">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">44dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/purple_light</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <!-- Thin vertical separator between toolbar groups -->
+    <style name="ToolbarDivider">
+        <item name="android:layout_width">1dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:layout_marginStart">3dp</item>
+        <item name="android:layout_marginEnd">3dp</item>
+        <item name="android:background">@color/card_border</item>
+    </style>
+
+</resources>

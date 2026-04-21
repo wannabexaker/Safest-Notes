@@ -13,6 +13,9 @@ interface FolderDao {
     @Query("SELECT * FROM folders ORDER BY name ASC")
     fun getAllFolders(): Flow<List<Folder>>
 
+    @Query("SELECT * FROM folders ORDER BY name ASC")
+    suspend fun getAllFoldersOnce(): List<Folder>
+
     @Query("SELECT * FROM folders WHERE id = :id LIMIT 1")
     suspend fun getFolderById(id: Int): Folder?
 

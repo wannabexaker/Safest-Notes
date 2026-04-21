@@ -8,5 +8,6 @@ data class Folder(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String = "",
     val parentFolderId: Int? = null,
-    val accentColor: Int = 0
+    val accentColor: Int = 0,
+    val isSecure: Boolean = false
 )

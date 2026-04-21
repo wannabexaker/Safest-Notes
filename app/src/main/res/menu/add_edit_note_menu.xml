@@ -11,9 +11,21 @@
     <item
         android:id="@+id/action_read_mode"
         android:title="Read"
-        android:icon="@drawable/ic_lock"
+        android:icon="@drawable/ic_visibility"
         android:checkable="true"
         app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_secure"
+        android:title="Make Secure"
+        android:icon="@drawable/ic_lock"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_note_color"
+        android:title="Note Color"
+        android:icon="@drawable/ic_format_color_fill"
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_move"
@@ -22,9 +34,21 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_history"
+        android:title="History"
+        android:icon="@drawable/ic_history"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_delete"
         android:title="Delete"
         android:icon="@drawable/ic_delete"
         app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_read_aloud"
+        android:title="Read Aloud"
+        android:icon="@drawable/ic_volume_up"
+        app:showAsAction="never" />
 
 </menu>

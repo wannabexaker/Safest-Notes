@@ -1,15 +1,149 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background_obsidian"
     tools:context=".ui.RecycleBinFragment">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView_deleted"
+    <!-- Top row: overflow 3-dot for bin actions -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="4dp" />
+        android:layout_height="46dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="4dp"
+        android:background="@color/background_obsidian">
 
-</FrameLayout>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Recycle Bin"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08" />
+
+        <ImageButton
+            android:id="@+id/btn_bin_overflow"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@drawable/ic_more_vert"
+            android:tint="@color/text_primary"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="10dp"
+            android:contentDescription="More options" />
+
+    </LinearLayout>
+
+    <!-- Selection action bar — shown only when items are selected -->
+    <LinearLayout
+        android:id="@+id/selection_bar"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:gravity="center_vertical"
+        android:background="@color/surface_dark"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/btn_clear_selection"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="6dp"
+            android:src="@drawable/ic_close"
+            android:tint="@color/text_secondary"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Clear selection" />
+
+        <TextView
+            android:id="@+id/selection_count_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            tools:text="3 selected" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_restore_selected"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginEnd="8dp"
+            android:text="Restore"
+            android:textSize="13sp"
+            app:strokeColor="@color/purple_primary"
+            android:textColor="@color/purple_light" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_delete_selected"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Delete"
+            android:textSize="13sp"
+            app:backgroundTint="@color/danger_red"
+            android:textColor="@color/text_primary" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView_deleted"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp" />
+
+        <LinearLayout
+            android:id="@+id/recycle_bin_empty_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:src="@drawable/ic_delete"
+                android:tint="@color/text_muted"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Recycle bin is empty"
+                android:textColor="@color/text_secondary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Deleted notes will appear here"
+                android:textColor="@color/text_muted"
+                android:textSize="14sp"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

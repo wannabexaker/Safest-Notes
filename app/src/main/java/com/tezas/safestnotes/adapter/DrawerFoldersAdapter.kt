@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.tezas.safestnotes.R
 import com.tezas.safestnotes.data.Folder
@@ -81,7 +82,16 @@ class DrawerFoldersAdapter(
     }
 
     fun submitItems(newItems: List<DrawerFolderItem>) {
+        val old = items
+        val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = old.size
+            override fun getNewListSize() = newItems.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) =
+                old[oldPos].folder.id == newItems[newPos].folder.id
+            override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+                old[oldPos] == newItems[newPos]
+        })
         items = newItems
-        notifyDataSetChanged()
+        diff.dispatchUpdatesTo(this)
     }
 }

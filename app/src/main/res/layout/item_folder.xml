@@ -2,62 +2,86 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="220dp"
-    android:layout_margin="8dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="10dp"
+    android:layout_marginEnd="10dp"
+    android:layout_marginTop="5dp"
+    android:layout_marginBottom="5dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground"
     android:descendantFocusability="blocksDescendants"
-    app:cardUseCompatPadding="true"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
-    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardUseCompatPadding="false"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/surface_dark"
     app:strokeWidth="1dp"
-    app:strokeColor="@color/folder_card_stroke">
+    app:strokeColor="@color/card_border">
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:minHeight="100dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="100dp"
             android:orientation="vertical"
-            android:padding="12dp">
+            android:clickable="false"
+            android:focusable="false">
 
+            <!-- Top accent bar (uses folder's accentColor, set from adapter) -->
             <View
                 android:id="@+id/folderAccent"
                 android:layout_width="match_parent"
-                android:layout_height="6dp"
-                android:background="@color/brand_purple"
+                android:layout_height="4dp"
+                android:background="@color/purple_primary"
                 android:clickable="false"
                 android:focusable="false"
                 android:importantForAccessibility="no" />
 
-            <TextView
-                android:id="@+id/folderName"
+            <!-- Folder icon + name + count -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_marginTop="12dp"
-                android:maxLength="16"
-                android:autoSizeTextType="uniform"
-                android:autoSizeMinTextSize="12sp"
-                android:autoSizeMaxTextSize="18sp"
-                android:autoSizeStepGranularity="1sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
-                android:clickable="false"
-                android:focusable="false" />
-
-            <TextView
-                android:id="@+id/folderCount"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="12sp"
+                android:orientation="vertical"
+                android:padding="14dp"
                 android:clickable="false"
-                android:focusable="false" />
+                android:focusable="false">
+
+                <ImageView
+                    android:id="@+id/folderCardIcon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_folder"
+                    android:importantForAccessibility="no"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/folderName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLength="24"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:clickable="false"
+                    android:focusable="false" />
+
+                <TextView
+                    android:id="@+id/folderCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:clickable="false"
+                    android:focusable="false" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
@@ -66,7 +90,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/selection_scrim"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:clickable="false"
+            android:focusable="false" />
 
         <ImageView
             android:id="@+id/selection_check"
@@ -75,8 +101,22 @@
             android:layout_gravity="top|end"
             android:layout_margin="10dp"
             android:src="@drawable/ic_check_circle"
-            android:tint="@color/brand_purple"
-            android:visibility="gone" />
+            android:tint="@color/purple_primary"
+            android:visibility="gone"
+            android:contentDescription="Selected" />
+
+        <ImageView
+            android:id="@+id/folder_lock_icon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/ic_lock"
+            android:tint="@color/purple_light"
+            android:alpha="0.9"
+            android:visibility="gone"
+            android:contentDescription="Secure folder" />
 
         <ImageView
             android:id="@+id/folder_drag_handle"
@@ -85,7 +125,9 @@
             android:layout_gravity="bottom|end"
             android:layout_margin="8dp"
             android:src="@drawable/ic_drag_handle"
-            android:tint="@color/brand_purple" />
+            android:tint="@color/text_muted"
+            android:visibility="gone"
+            android:contentDescription="Drag to reorder" />
 
     </FrameLayout>
 

@@ -13,6 +13,6 @@
         android:id="@+id/action_change_folder_color"
         android:title="Change accent color" />
     <item
-        android:id="@+id/action_reorder_folder"
-        android:title="Drag reorder" />
+        android:id="@+id/action_toggle_secure_folder"
+        android:title="Make secure folder" />
 </menu>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Note slides down and fades out when closing -->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <translate
+        android:fromYDelta="0"
+        android:toYDelta="55%p"
+        android:duration="300"
+        android:interpolator="@android:interpolator/accelerate_cubic" />
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0"
+        android:startOffset="60"
+        android:duration="220"
+        android:interpolator="@android:interpolator/accelerate_quad" />
+</set>

@@ -1,0 +1,57 @@
+Free Personal Use License (FPUL)
+==================================
+Copyright (c) 2024-2026 Ioannis (wannabexaker). All rights reserved.
+
+GRANT OF LICENSE
+This software is provided free of charge for personal, non-commercial 
+use only, subject to the terms below.
+
+DEFINITIONS
+"Personal use" means use by a single individual solely for private, 
+non-revenue-generating activities. Use within any organization, 
+business entity, or for any client or freelance work constitutes 
+commercial use regardless of compensation.
+
+PERMITTED USE
+You may:
+- Use this software for personal, non-commercial projects
+- Study and learn from the source code
+- Run the software for your own personal use
+- Create private forks for personal reference only
+
+Any permitted use must retain all original copyright and license 
+notices. Modifications remain subject to this license and may not 
+be distributed in any form.
+
+PROHIBITED USE
+You may NOT:
+- Use this software for commercial purposes, profit, or client work
+- Redistribute, sell, resell, or sublicense this software
+- Transfer rights to any third party
+- Remove or alter any copyright or license notices
+- Use this software as a component in any product or service
+- Distribute modified versions in any form
+- Host on public package repositories (npm, PyPI, etc.)
+- Claim authorship or ownership of this software
+- Use this software to train or fine-tune machine learning models
+
+COPYRIGHTS & PROPRIETARY RIGHTS
+This software is the exclusive intellectual property of Ioannis. 
+All copyrights, trademarks, and related rights are reserved.
+
+DISCLAIMER
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. 
+THE AUTHOR SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM USE 
+OR INABILITY TO USE THIS SOFTWARE.
+
+TERMINATION
+This license terminates immediately and automatically upon any 
+violation. Upon termination, you must cease all use and destroy 
+all copies.
+
+GOVERNING LAW
+This license is governed by the laws of Greece.
+
+CONTACT
+Commercial licensing or permissions: https://github.com/wannabexaker
+Last Updated: April 23, 2026

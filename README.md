@@ -1,280 +1,65 @@
 # SafestNotes
 
-A privacy-first, feature-rich notes app for Android. All notes are stored locally — no cloud, no telemetry. Sensitive notes are protected with AES-256-GCM encryption locked behind a master password and optional biometric authentication.
+Offline Android notes app with AES-256-GCM per-note encryption, biometric unlock, and rich text editing
 
----
+## Overview
 
-## Table of Contents
-
-- [Features](#features)
-- [Architecture](#architecture)
-- [Security Model](#security-model)
-- [Project Structure](#project-structure)
-- [Data Layer](#data-layer)
-- [UI Layer](#ui-layer)
-- [Building & Running](#building--running)
-- [Database Migrations](#database-migrations)
-- [Dependencies](#dependencies)
-
----
+Local-only notes application for Android. No network access, no cloud sync, no telemetry. Sensitive notes are encrypted with AES-256-GCM before being written to the database; plaintext never reaches SQLite. The master password is the encryption root — derived via PBKDF2-SHA256 (200,000 iterations); biometric unlock wraps the derived key in Android Keystore RSA-2048.
 
 ## Features
 
-### Notes
-- Rich text editing: bold, italic, underline, strikethrough, superscript, subscript
-- Text alignment: left, center, right
-- Lists: bullet, numbered, checklist (checkbox)
-- Headings H1 / H2 / H3
-- Indent / outdent
-- Text color and highlight color
-- Font size: Tiny (10sp) → Small (13sp) → Medium (18sp) → Large (22sp) → Extra Large (26sp) → Huge (30sp)
-- Horizontal rule
-- Clear all formatting
-- 11 note background color tints (Midnight, Forest, Ocean, Crimson, Amber, Lavender, Rose, Teal, Navy, Espresso, default)
-- Pin notes to the top of any list
-- Per-note revision history (last 10 revisions auto-saved)
-- Live word / character count bar
-
-### Organization
-- Folders with up to 3 nesting levels
-- Move / copy notes between folders
-- Drag-to-reorder notes within a folder (drag handle)
-- Multi-select with bulk: move, copy, delete, favorite, duplicate, secure
-
-### Favorites
-- Star any note from the main list, context menu, or editor toolbar
-- Dedicated Favorites tab — filter is properly re-applied after returning from the editor
-- Long-press context menu: open, toggle favorite, share, delete
-
-### Recycle Bin
-- Soft-delete with **30-day auto-purge** (hard-deleted silently on app launch)
-- Shows exact deletion date; displays a warning countdown for notes expiring within 7 days
-- Multi-select bulk restore / permanent delete
-- Overflow menu: Select All, Restore All, Empty Bin
-
-### Search
+- Rich text editor: bold, italic, underline, strikethrough, superscript/subscript, headings H1–H3, lists (bullet, numbered, checklist), text color, highlight color, six font sizes, horizontal rule
+- 11 note background color tints
+- Per-note revision history — last 10 revisions auto-saved; cascade-deleted when the note is permanently removed
+- Folders with up to 3 nesting levels; move/copy notes between folders; drag-to-reorder within a folder
+- Multi-select with bulk operations: move, copy, delete, favorite, duplicate, secure
+- Recycle Bin with 30-day auto-purge; expiry countdown shown for notes within 7 days of deletion
 - Live full-text search across title and content (HTML-stripped)
-- Works across all views including inside folders
-
-### Sorting
-- Title A→Z / Z→A
-- Content length (characters or bytes) ascending / descending
-- Date created ascending / descending
-- Date modified ascending / descending (default)
-
-### View Modes
-- Grid (2 columns) or List — toggled from Settings, persisted in SharedPreferences
-
-### Text-to-Speech (Read Aloud)
-- Volume icon always visible in the note toolbar; one tap starts / stops reading
-- TTS playback bar: speed cycle, settings (⚙), stop (✕)
-- Configurable speed (0.5× – 2×), pitch (Low / Normal / High), language (Auto / Greek / English)
-- Automatic language detection using Unicode ranges (U+0370–03FF, U+1F00–1FFF); threshold: ≥ 25 % Greek characters
-- Mixed-language text split by sentence; each segment queued with the correct locale
-- All TTS settings persisted in SharedPreferences
-
-### Security
-- Master password setup on first launch (PBKDF2-SHA256, 200 000 iterations, random 16-byte salt)
-- AES-256-GCM per-note encryption (random 12-byte IV; IV + salt stored as JSON metadata alongside ciphertext)
-- Biometric unlock (Android BiometricPrompt) as a password-free alternative
-- Auto-lock when the app goes to background (configurable timeout in Settings)
-- Encrypted notes open with a blur-to-sharp CSS reveal animation after successful unlock
-
-### Navigation
-- **Bottom navigation** (default): All Notes, Favorites, Folders, Recycle Bin, Settings
-- **Drawer navigation** (optional, switchable in Settings): same sections plus nested folder tree
-- Smooth crossfade between tabs / sections (200 ms)
-- Slide-right animation for folder drill-down; slide-left on back
-- Slide-up animation on note open; slide-down on note close
-- No white flash on any transition (explicit `android:windowBackground` in theme)
-
----
+- Sort by title, content length, date created, or date modified
+- Text-to-speech with speed, pitch, and language controls; automatic Greek/English language detection by Unicode range analysis
+- AES-256-GCM per-note encryption locked behind master password (PBKDF2-SHA256, 200k iterations, 16-byte salt)
+- Biometric unlock via Android BiometricPrompt — Android Keystore RSA-2048 wraps the in-memory AES key
+- Auto-lock on app background with configurable timeout
+- Bottom navigation or drawer navigation — switchable in Settings
 
 ## Architecture
 
-```
-UI Layer        — Activities, Fragments, Adapters
-    ↓
-ViewModel       — NotesViewModel (shared, activityViewModels)
-    ↓
-Repository      — NotesRepository (business logic + depth enforcement)
-    ↓
-Room DAOs       — NoteDao, FolderDao, NoteRevisionDao
-    ↓
-SQLite          — safest_notes_db (Room v12)
-```
+MVVM. A single `NotesViewModel` is shared across all fragments via `activityViewModels()`. The main `items` flow is a `combine()` of `allNotes`, `allFolders`, and a `UiState` snapshot; it re-emits on any change to search query, filter flags, folder scope, or sort order. Filters are set in `onStart()` and cleared in `onStop()` so they re-apply correctly after returning from child activities without a full fragment recreation.
 
-**Pattern: MVVM** with a single `NotesViewModel` shared across all fragments via `activityViewModels()`. Fragments communicate upward through the ViewModel only — no direct fragment-to-fragment references.
+Encryption runs on the IO dispatcher inside `saveNoteInternal()` before the repository write. If the vault locks between load and save, the existing ciphertext blob is kept unchanged.
 
-Data flows down as `StateFlow` observed with `viewLifecycleOwner.lifecycleScope.launch { collect { } }`. The main `items` flow is a `combine()` of `allNotes`, `allFolders`, and a `UiState` snapshot (search query, deleted flag, favorites flag, folder scope, sort order).
+### Components
 
----
-
-## Security Model
-
-```
-Master Password
-    │
-    ▼  PBKDF2-SHA256 (200 000 iterations, random 16-byte salt)
-    │
-    ▼  AES-256 key (in-memory only while vault is unlocked)
-    │
-    ├─ Encrypt note content → AES-256-GCM (random 12-byte IV per note)
-    │   Ciphertext  → stored in note.content  (Base64)
-    │   IV + salt   → stored in note.secureMetadata  (JSON)
-    │
-    └─ Biometric shortcut:
-        Android Keystore RSA-2048 key wraps the AES key
-        BiometricPrompt unwraps it at unlock — no password re-entry needed
-```
-
-- Plaintext **never reaches the database** — encryption runs on the IO dispatcher inside `saveNoteInternal()` before `repository.update()` is called.
-- If the vault locks between load and save, the existing ciphertext blob is kept unchanged (no data loss).
-- `SecurityManager` is a singleton initialized in the `Application` subclass (`SafestNotesApp`).
-- `AutoLockManager` uses `ProcessLifecycleOwner` to detect backgrounding and start the lock timer.
-
----
-
-## Project Structure
-
-```
-app/src/main/java/com/tezas/safestnotes/
-│
-├── data/
-│   ├── Note.kt                   Room entity — notes table (schema v12)
-│   ├── Folder.kt                 Room entity — folders table
-│   ├── NoteRevision.kt           Room entity — note_revisions table
-│   ├── NoteDao.kt                CRUD + purgeDeletedBefore()
-│   ├── FolderDao.kt              CRUD + getFoldersByParentId()
-│   ├── NoteRevisionDao.kt        insert, pruneOldRevisions, getRevisionsForNote
-│   ├── NotesRepository.kt        Business gate: depth check, cascade delete, purge
-│   └── NotesDatabase.kt          RoomDatabase v12 with all migrations
-│
-├── viewmodel/
-│   ├── NotesViewModel.kt         Shared ViewModel; items StateFlow; all CRUD + filter ops
-│   └── NotesViewModelFactory.kt  Manual factory for constructor DI
-│
-├── security/
-│   ├── SecurityManager.kt        Vault lifecycle: unlock, lock, encrypt, decrypt
-│   ├── AesGcm.kt                 AES-256-GCM encrypt / decrypt primitives
-│   ├── KeyDerivation.kt          PBKDF2-SHA256 key derivation
-│   ├── BiometricKeyStore.kt      Android Keystore RSA wrap / unwrap
-│   ├── SecureStorage.kt          EncryptedSharedPreferences wrapper
-│   └── AutoLockManager.kt        ProcessLifecycleOwner → auto-lock on background
-│
-├── ui/
-│   ├── SafestNotesApp.kt         Application subclass; SecurityManager init
-│   ├── MainActivity.kt           Host activity; bottom nav / drawer; navigateTo()
-│   ├── AddEditNoteActivity.kt    Note editor; rich-text toolbar; TTS; save/encrypt flow
-│   ├── MasterPasswordActivity.kt First-run master password setup
-│   ├── NotesFragment.kt          Main list; swipe gestures; multi-select; drag-reorder
-│   ├── FolderNotesFragment.kt    NotesFragment subclass scoped to a folder
-│   ├── FoldersFragment.kt        Folder grid with create / rename / delete
-│   ├── FavoritesFragment.kt      Favorites list; long-press context menu
-│   ├── RecycleBinFragment.kt     Deleted notes; multi-select; 30-day expiry display
-│   ├── SettingsFragment.kt       Preference screen (nav, view mode, security, font)
-│   ├── CustomRichEditor.kt       RichEditor subclass with touch-passthrough patch
-│   ├── UnlockDialog.kt           Biometric + password unlock bottom sheet
-│   ├── MasterPasswordSetupDialog.kt
-│   └── ChangePasswordDialog.kt
-│
-└── adapter/
-    ├── NotesAdapter.kt           Notes + folders list; drag handle; selection mode
-    ├── FoldersAdapter.kt         Folders-only grid adapter
-    ├── DrawerFoldersAdapter.kt   Nested folder tree for drawer navigation
-    └── RecycleBinAdapter.kt      Deleted notes; selection mode; expiry countdown
-```
-
----
-
-## Data Layer
-
-### Note Entity (v12)
-
-| Column | Type | Description |
-|---|---|---|
-| `id` | INTEGER PK | Auto-increment |
-| `title` | TEXT | Plain-text title |
-| `content` | TEXT | HTML rich text, or Base64 AES ciphertext for secure notes |
-| `timestamp` | INTEGER | Last-modified epoch ms |
-| `createdTimestamp` | INTEGER | Creation epoch ms |
-| `isFavorite` | INTEGER (bool) | Starred by user — persists across all edits |
-| `isDeleted` | INTEGER (bool) | Soft-deleted; note is in Recycle Bin |
-| `deletedAt` | INTEGER? | Epoch ms when moved to Recycle Bin; `null` = not deleted |
-| `folderId` | INTEGER? | FK → folders.id; `null` = root level |
-| `isSecure` | INTEGER (bool) | Content is AES-256-GCM encrypted |
-| `secureMetadata` | TEXT? | JSON `{"salt":"…","iv":"…"}` for decryption |
-| `noteColor` | INTEGER | ARGB background tint (0 = default surface) |
-| `isPinned` | INTEGER (bool) | Note floats to top of its list |
-
-### 30-Day Auto-Purge
-
-On every app launch `NotesViewModel.purgeExpiredNotes()` issues a single atomic DELETE:
-
-```sql
-DELETE FROM notes
-WHERE  isDeleted = 1
-  AND  deletedAt IS NOT NULL
-  AND  deletedAt < :cutoff   -- cutoff = now − 30 days
-```
-
-Notes that were in the Recycle Bin before v12 (no `deletedAt` recorded) are excluded from auto-purge — they remain until the user explicitly deletes them.
-
-### Revision History
-
-Up to the last **10 revisions** per note are stored in `note_revisions`. Each save of an existing note snapshots the previous state before overwriting. Revisions are cascade-deleted when the note is permanently removed.
-
----
-
-## UI Layer
-
-### Filter State Machine
-
-`NotesViewModel` exposes five independent `MutableStateFlow`s that `combine()` into a single `UiState` driving the `items` flow:
-
-| Flow | Managed by | Effect |
-|---|---|---|
-| `_showDeleted` | `RecycleBinFragment` `onStart` / `onStop` | Show deleted vs. active notes |
-| `_showFavoritesOnly` | `FavoritesFragment` `onStart` / `onStop` | Filter to `isFavorite = true` |
-| `_currentFolderId` | `openFolder()` / `openAllNotes()` | Scope note list to a folder |
-| `_searchQuery` | `SearchView` in toolbar | Live text search |
-| `_sortOrder` | Options menu | Sort algorithm |
-
-Filters are set in `onStart()` and cleared in `onStop()` — this ensures they are correctly re-applied after returning from a child `Activity` (e.g., editing a note from the Favorites list) without requiring a full fragment recreation.
-
-### Animations Summary
-
-| Transition | Specification |
+| Component | Role |
 |---|---|
-| Note open — enter | Slide up from 55 %, fade in, 360 ms, decelerate cubic |
-| Note open — exit (list) | Scale 1.0 → 0.96 + alpha dim, 320 ms |
-| Note close — enter (list) | Scale 0.96 → 1.0 + alpha restore, 300 ms |
-| Note close — exit | Slide down to 55 %, fade out, 300 ms, accelerate cubic |
-| Tab / section switch | Crossfade 200 ms (in) / 140 ms (out) |
-| Folder drill-down | Slide in from right 40 %, 280 ms |
-| Folder back | Slide out to right 40 %, 280 ms |
-| Saving overlay | Fade in 180 ms; fade out 120 ms on error |
-| Secure note content reveal | CSS `filter: blur(6px) → none` + `opacity: 0.4 → 1.0`, 450 ms |
+| `data/` | Room entities, DAOs, NotesRepository, NotesDatabase v12 |
+| `viewmodel/` | NotesViewModel — StateFlow-based; all CRUD and filter operations |
+| `security/` | SecurityManager, AesGcm, KeyDerivation, BiometricKeyStore, SecureStorage, AutoLockManager |
+| `ui/` | MainActivity, AddEditNoteActivity, all fragments and dialogs |
+| `adapter/` | NotesAdapter, FoldersAdapter, DrawerFoldersAdapter, RecycleBinAdapter |
 
----
+## Tech Stack
 
-## Building & Running
-
-### Requirements
-
-| Tool | Version |
+| Technology | Role |
 |---|---|
-| Android Studio | Hedgehog (2023.1) or later |
-| Compile / Target SDK | 34 |
-| Min SDK | 24 (Android 7.0 Nougat) |
-| JDK | 11+ |
-| Kotlin | 1.9+ |
+| Kotlin | Primary language |
+| Android SDK 34 (min 24) | Platform |
+| Room | SQLite ORM with Flow support |
+| Android Keystore | Biometric key wrapping (RSA-2048) |
+| Android BiometricPrompt | Biometric authentication |
+| EncryptedSharedPreferences | Secure preferences storage |
+| kotlinx.coroutines | Async / IO dispatcher |
+| richeditor-android | WebView-based HTML rich text editor |
+| Material 3 | UI components and theming |
+| ProcessLifecycleOwner | Auto-lock on background detection |
+| KSP | Annotation processor for Room |
 
-### Build
+## Installation
+
+Requires Android Studio Hedgehog (2023.1) or later, JDK 21, Kotlin 1.9+.
 
 ```bash
-# Clone
-git clone <repo-url>
+git clone https://github.com/wannabexaker/SafestNotes
 cd SafestNotes
 
 # Debug build
@@ -284,46 +69,42 @@ cd SafestNotes
 ./gradlew installDebug
 ```
 
-### First Run
+On first launch the app prompts for a master password. This is the only key that can decrypt secure notes — it cannot be recovered if lost. Biometric unlock can be enabled in **Settings → Security** after the master password is set.
 
-On first launch the app prompts for a **master password**. This is the key that encrypts all secure notes. It can be changed later in **Settings → Security → Change Password**. After setting the password, biometric unlock can be enabled in the same settings section.
+## Project Structure
 
----
+```
+SafestNotes/
+└── app/src/main/java/com/tezas/safestnotes/
+    ├── data/
+    │   ├── Note.kt                  — Room entity (schema v12)
+    │   ├── Folder.kt                — Room entity
+    │   ├── NoteRevision.kt          — Room entity (last 10 revisions per note)
+    │   ├── NoteDao.kt               — CRUD + purgeDeletedBefore()
+    │   ├── FolderDao.kt             — CRUD + getFoldersByParentId()
+    │   ├── NoteRevisionDao.kt       — insert, pruneOldRevisions, getRevisionsForNote
+    │   ├── NotesRepository.kt       — business logic; folder depth enforcement
+    │   └── NotesDatabase.kt         — RoomDatabase v12; all migrations
+    ├── viewmodel/
+    │   └── NotesViewModel.kt        — shared StateFlow hub; CRUD + filter ops
+    ├── security/
+    │   ├── SecurityManager.kt       — vault lifecycle: unlock, lock, encrypt, decrypt
+    │   ├── AesGcm.kt                — AES-256-GCM primitives
+    │   ├── KeyDerivation.kt         — PBKDF2-SHA256
+    │   ├── BiometricKeyStore.kt     — Android Keystore RSA wrap/unwrap
+    │   └── AutoLockManager.kt       — ProcessLifecycleOwner → auto-lock
+    └── ui/
+        ├── MainActivity.kt          — host activity; nav controller
+        ├── AddEditNoteActivity.kt   — rich text editor; encrypt-on-save flow
+        └── [fragments + adapters]
+```
 
-## Database Migrations
+## Notes
 
-All migrations are additive — no existing data is dropped.
+`CustomRichEditor` subclasses `jp.wasabeef.richeditor.RichEditor` to expose its `protected exec()` method as public. This is the only way to issue JavaScript calls that lack a public API in the library.
 
-| Versions | Change |
-|---|---|
-| 5 → 6 | Added `folders.parentFolderId` (INT?), `folders.accentColor` (INT) |
-| 6 → 7 | Added `notes.createdTimestamp` (INT NOT NULL DEFAULT 0) |
-| 7 → 8 | Added `notes.noteColor` (INT NOT NULL DEFAULT 0) |
-| 8 → 9 | Created `note_revisions` table with CASCADE FK on `notes.id` |
-| 9 → 10 | Added `folders.isSecure` (INT NOT NULL DEFAULT 0) |
-| 10 → 11 | Added `notes.isPinned` (INT NOT NULL DEFAULT 0) |
-| 11 → 12 | Added `notes.deletedAt` (INT, nullable) for 30-day Recycle Bin expiry |
+The Note entity stores ciphertext in the `content` column when `isSecure = true`; the `secureMetadata` column holds a JSON object `{"salt":"...","iv":"..."}` needed for decryption. The two columns are always written together atomically — a note with `isSecure = true` and no `secureMetadata` indicates a write failure.
 
----
+All 7 database migrations (v5 → v12) are additive. `fallbackToDestructiveMigration()` is not used anywhere in the codebase.
 
-## Dependencies
-
-| Library | Purpose |
-|---|---|
-| `androidx.room:room-runtime` + `room-ktx` | Local SQLite ORM with Flow support |
-| `androidx.lifecycle:lifecycle-viewmodel-ktx` | ViewModel + `viewModelScope` |
-| `androidx.lifecycle:lifecycle-process` | `ProcessLifecycleOwner` for auto-lock |
-| `androidx.preference:preference-ktx` | Settings UI (PreferenceFragmentCompat) |
-| `androidx.biometric:biometric` | Fingerprint / face authentication |
-| `androidx.security:security-crypto` | `EncryptedSharedPreferences` |
-| `jp.wasabeef:richeditor-android` | WebView-based HTML rich text editor |
-| `com.google.android.material` | Material 3 components, theming |
-| `kotlinx.coroutines:kotlinx-coroutines-android` | Async / IO dispatcher |
-| `androidx.activity:activity-ktx` | `OnBackPressedDispatcher`, result launchers |
-| `androidx.fragment:fragment-ktx` | `activityViewModels()`, lifecycle-aware transactions |
-
----
-
-## License
-
-Private / proprietary. All rights reserved.
+Auto-purge runs once per app launch via `NotesViewModel.purgeExpiredNotes()`. Notes that were soft-deleted before v12 (no `deletedAt` recorded) are excluded from the 30-day purge and remain in the Recycle Bin until explicitly deleted by the user.

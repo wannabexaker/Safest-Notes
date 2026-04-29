@@ -46,3 +46,6 @@ CLAUDE.md
 
 # graphify outputs (generated)
 graphify-out/
+
+# Local analysis cache (skill output — never commit)
+docs/
